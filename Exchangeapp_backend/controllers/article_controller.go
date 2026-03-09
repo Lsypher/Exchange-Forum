@@ -5,6 +5,7 @@ import (
 	"errors"
 	"exchangeapp/global"
 	"exchangeapp/models"
+	"log"
 	"net/http"
 	"time"
 
@@ -42,8 +43,21 @@ func CreateArticle(ctx *gin.Context) {
 	// 使用 Del 方法删除 Redis 中与 cachekey 相关的缓存数据，如果删除失败，返回一个 HTTP 500 错误响应，包含错误信息
 	// 文章创建成功后，删除 Redis 中与 cachekey 相关的缓存数据，以确保下次获取文章列表时能够获取到最新的数据，旁路缓存机制，保证数据的一致性和实时性
 	if err := global.RedisDB.Del(cachekey).Err(); err != nil {
-		ctx.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
-		return
+		log.Printf("Failed to delete cache key %s: %v", cachekey, err)
+
+		// 异步重试删除
+		go func() {
+			maxRetries := 3
+			for i := 0; i < maxRetries; i++ {
+				time.Sleep(time.Duration(i+1) * time.Second) // 等待一段时间后重试
+				if err := global.RedisDB.Del(cachekey).Err(); err == nil {
+					log.Printf("Successfully deleted cache key %s on retry %d", cachekey, i+1)
+					break
+				} else {
+					log.Printf("Retry %d: Failed to delete cache key %s: %v", i+1, cachekey, err)
+				}
+			}
+		}()
 	}
 
 	// 返回一个 HTTP 200 成功响应，包含创建成功的文章数据
