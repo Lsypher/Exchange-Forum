@@ -19,20 +19,36 @@ var cachekey = "articles_cache"
 
 // 创建文章函数，接收一个 Gin 上下文对象作为参数，处理创建文章的 HTTP 请求
 func CreateArticle(ctx *gin.Context) {
-	// 定义一个 Article 结构体变量 article，用于接收请求中的 JSON 数据并进行绑定
-	var article models.Article // 单个文章对象，接收客户端传来的单个文章数据
+	// 定义一个 Article 结构体变量 articleData，用于接收请求中的 JSON 数据并进行绑定
+	var articleData models.Article // 单个文章对象，接收客户端传来的单个文章数据
 
-	// 使用 ShouldBindJSON 方法将请求中的 JSON 数据绑定到 article 变量上，如果绑定失败，返回一个 HTTP 400 错误响应，包含错误信息
-	if err := ctx.ShouldBindJSON(&article); err != nil {
+	// 使用 ShouldBindJSON 方法将请求中的 JSON 数据绑定到 articleData 变量上，如果绑定失败，返回一个 HTTP 400 错误响应，包含错误信息
+	if err := ctx.ShouldBindJSON(&articleData); err != nil {
 		ctx.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
 
-	// // 使用 AutoMigrate 方法进行自动迁移，确保数据库中存在与 Article 结构体对应的表，如果迁移失败，返回一个 HTTP 500 错误响应，包含错误信息
-	// if err := global.Db.AutoMigrate(&article); err != nil {
-	// 	ctx.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
-	// 	return
-	// }
+	// 从上下文中获取用户信息
+	username, exists := ctx.Get("username")
+	if !exists {
+		ctx.JSON(http.StatusUnauthorized, gin.H{"error": "User not authenticated"})
+		return
+	}
+
+	// 查询用户ID
+	var user models.User
+	if err := global.Db.Where("username = ?", username.(string)).First(&user).Error; err != nil {
+		ctx.JSON(http.StatusNotFound, gin.H{"error": "User not found"})
+		return
+	}
+
+	// 创建文章时关联用户
+	article := models.Article{
+		Title:   articleData.Title,
+		Content: articleData.Content,
+		Preview: articleData.Preview,
+		UserID:  user.ID, // 关联用户ID
+	}
 
 	// 使用 Create 方法将 article 变量中的数据插入数据库的 articles 表中，如果插入失败，返回一个 HTTP 500 错误响应，包含错误信息
 	if err := global.Db.Create(&article).Error; err != nil {
@@ -74,9 +90,8 @@ func GetArticles(ctx *gin.Context) {
 		// 定义一个 Article 结构体切片变量 articles，用于存储从数据库中的 articles 表查询到的文章列表
 		var articles []models.Article
 
-		// 使用 Find 方法从数据库中查询 articles 表的所有记录，并将结果存储在 articles 变量中，如果查询失败，返回一个 HTTP 404 错误响应（如果错误类型是 gorm.ErrRecordNotFound）或者 HTTP 500 错误响应（其他错误），包含错误信息
-		// .Error 只返回错误信息，忽略其他信息
-		if err := global.Db.Find(&articles).Error; err != nil {
+		// 预加载用户信息以获取作者详情
+		if err := global.Db.Preload("User").Find(&articles).Error; err != nil {
 			if errors.Is(err, gorm.ErrRecordNotFound) {
 				ctx.JSON(http.StatusNotFound, gin.H{"error": err.Error()})
 			} else {
@@ -127,8 +142,8 @@ func GetArticleByID(ctx *gin.Context) {
 	// 定义一个 Article 结构体变量 article，用于存储从数据库中的 articles 表查询到的文章数据
 	var article models.Article
 
-	// 使用 Where 方法查询数据库中 articles 表中 ID 字段等于 id 变量的记录，并将结果存储在 article 变量中，如果查询失败，返回一个 HTTP 404 错误响应（如果错误类型是 gorm.ErrRecordNotFound）或者 HTTP 500 错误响应（其他错误），包含错误信息
-	if err := global.Db.Where("id = ?", id).First(&article).Error; err != nil {
+	// 预加载用户信息以获取作者详情
+	if err := global.Db.Preload("User").First(&article, id).Error; err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			ctx.JSON(http.StatusNotFound, gin.H{"error": err.Error()})
 		} else {

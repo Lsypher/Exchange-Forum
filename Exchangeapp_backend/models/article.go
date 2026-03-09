@@ -10,4 +10,6 @@ type Article struct {
 	Title   string `json:"title" binding:"required"`   // 文章标题，必须提供
 	Content string `json:"content" binding:"required"` // 文章内容，必须提供
 	Preview string `json:"preview" binding:"required"` // 文章预览信息，必须提供
+	UserID  uint   `json:"user_id" gorm:"not null"`    // 添加此行 - 用户ID，关联到用户
+	User    User   `json:"user" gorm:"foreignKey:UserID"` // 添加此行，用于预加载
 }

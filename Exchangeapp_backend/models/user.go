@@ -7,6 +7,7 @@ import "gorm.io/gorm"
 // GORM 会将 User 结构体映射到数据库中的 users 表
 type User struct {
 	gorm.Model
-	Username string `gorm:"unique;not null"`
-	Password string `gorm:"not null"`
+	Username string    `gorm:"unique;not null"`
+	Password string    `gorm:"not null"`
+	Articles []Article `json:"articles" gorm:"foreignKey:UserID"` // 添加此行 - 反向关联文章
 }
