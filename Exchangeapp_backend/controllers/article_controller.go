@@ -90,8 +90,8 @@ func GetArticles(ctx *gin.Context) {
 		// 定义一个 Article 结构体切片变量 articles，用于存储从数据库中的 articles 表查询到的文章列表
 		var articles []models.Article
 
-		// 预加载用户信息以获取作者详情
-		if err := global.Db.Preload("User").Find(&articles).Error; err != nil {
+		// 执行两条 SQL，Find(&articles) 查数据库的文章列表，Preload("User") 批量查关联的用户信息，避免 N+1 查询问题，如果查询失败，返回一个 HTTP 404 错误响应，包含错误信息
+		if err := global.Db.Preload("User").Find(&articles).Error; err != nil { // Find：旨在查找多条记录。它通常用于查询列表，不会自动加 LIMIT 1。与下面的 GetArticleByID 中的 First 不同，First 旨在查找单条记录，通常会自动加 LIMIT 1。
 			if errors.Is(err, gorm.ErrRecordNotFound) {
 				ctx.JSON(http.StatusNotFound, gin.H{"error": err.Error()})
 			} else {
@@ -142,8 +142,8 @@ func GetArticleByID(ctx *gin.Context) {
 	// 定义一个 Article 结构体变量 article，用于存储从数据库中的 articles 表查询到的文章数据
 	var article models.Article
 
-	// 预加载用户信息以获取作者详情
-	if err := global.Db.Preload("User").First(&article, id).Error; err != nil {
+	// First(&article, id) 方法用于根据文章 ID 从数据库中查询文章数据，Preload("User") 方法用于预加载与文章关联的用户信息，避免 N+1 查询问题，如果查询失败，返回一个 HTTP 404 错误响应，包含错误信息，如果查询过程中发生其他错误，返回一个 HTTP 500 错误响应，包含错误信息
+	if err := global.Db.Preload("User").First(&article, id).Error; err != nil { // First：旨在查找单条记录，通常会自动加 LIMIT 1。与上面的 GetArticles 中的 Find 不同，Find 旨在查找多条记录。它通常用于查询列表，不会自动加 LIMIT 1。
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			ctx.JSON(http.StatusNotFound, gin.H{"error": err.Error()})
 		} else {
