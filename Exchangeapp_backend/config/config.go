@@ -27,6 +27,13 @@ type Config struct {
 	JWT struct {
 		Secret string
 	}
+	// AI 配置
+	AI struct {
+		BaseURL string
+		APIKey  string
+		Model   string
+		Timeout int
+	}
 }
 
 // 定义一个全局变量，类型是指向 Config 结构体的指针

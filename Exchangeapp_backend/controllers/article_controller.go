@@ -5,6 +5,7 @@ import (
 	"errors"
 	"exchangeapp/global"
 	"exchangeapp/models"
+	"exchangeapp/utils"
 	"log"
 	"net/http"
 	"time"
@@ -25,6 +26,18 @@ func CreateArticle(ctx *gin.Context) {
 	// 使用 ShouldBindJSON 方法将请求中的 JSON 数据绑定到 articleData 变量上，如果绑定失败，返回一个 HTTP 400 错误响应，包含错误信息
 	if err := ctx.ShouldBindJSON(&articleData); err != nil {
 		ctx.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	// 内容审核：拼接标题和内容进行审核
+	contentToModerate := articleData.Title + "\n" + articleData.Content
+	isPassed, reason, err := utils.ModerateContent(contentToModerate)
+	if err != nil {
+		ctx.JSON(http.StatusInternalServerError, gin.H{"error": "内容审核服务出错: " + err.Error()})
+		return
+	}
+	if !isPassed {
+		ctx.JSON(http.StatusBadRequest, gin.H{"error": "内容审核未通过: " + reason})
 		return
 	}
 
