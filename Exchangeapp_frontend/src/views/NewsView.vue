@@ -19,24 +19,40 @@
         <el-skeleton :rows="3" animated />
       </div>
 
-      <div v-else-if="articles.length === 0" class="empty-section">
+      <div v-else-if="filteredArticles.length === 0" class="empty-section">
         <div class="blankslate">
           <el-icon size="48" class="text-muted"><Document /></el-icon>
-          <h3>暂无文章</h3>
-          <p>目前还没有发布任何文章，请稍后再来查看</p>
+          <h3>{{ searchQuery ? '没有找到匹配的文章' : '暂无文章' }}</h3>
+          <p>{{ searchQuery ? '试试其他关键词' : '目前还没有发布任何文章，请稍后再来查看' }}</p>
+          <el-button v-if="searchQuery" @click="searchQuery = ''" type="primary">
+            清除搜索
+          </el-button>
         </div>
       </div>
 
       <div v-else class="articles-section">
         <div class="articles-header">
-          <h2 class="section-title">最新文章</h2>
-          <div class="articles-stats">
-            共 {{ articles.length }} 篇文章
+          <h2 class="section-title">
+            {{ searchQuery ? '搜索结果' : '最新文章' }}
+          </h2>
+          <div class="header-actions">
+            <div class="search-box">
+              <el-input
+                v-model="searchQuery"
+                placeholder="搜索文章..."
+                :prefix-icon="Search"
+                clearable
+                class="search-input"
+              />
+            </div>
+            <div class="articles-stats">
+              共 {{ filteredArticles.length }} 篇文章
+            </div>
           </div>
         </div>
 
         <div class="articles-list">
-          <article v-for="article in articles" :key="article.ID" class="article-card">
+          <article v-for="article in filteredArticles" :key="article.ID" class="article-card">
             <div class="article-header">
               <div class="article-meta">
                 <span class="article-date">{{ formatDate(article.CreatedAt) }}</span>
@@ -73,18 +89,32 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted } from 'vue';
+import { ref, computed, onMounted } from 'vue';
 import { useRouter } from 'vue-router';
 import { ElMessage } from 'element-plus';
 import axios from '../axios';
 import { useAuthStore } from '../store/auth';
 import type { Article } from "../types/Article";
-import { Lock, Document, View } from '@element-plus/icons-vue';
+import { Lock, Document, View, Search } from '@element-plus/icons-vue';
 
 const articles = ref<Article[]>([]);
 const loading = ref(false);
+const searchQuery = ref('');
 const router = useRouter();
 const authStore = useAuthStore();
+
+const filteredArticles = computed(() => {
+  if (!searchQuery.value.trim()) {
+    return articles.value;
+  }
+  const query = searchQuery.value.toLowerCase().trim();
+  return articles.value.filter(article =>
+    article.title.toLowerCase().includes(query) ||
+    article.preview.toLowerCase().includes(query) ||
+    (article.category && article.category.toLowerCase().includes(query)) ||
+    (article.tags && article.tags.toLowerCase().includes(query))
+  );
+});
 
 const fetchArticles = async () => {
   if (!authStore.isAuthenticated) return;
@@ -193,6 +223,27 @@ onMounted(fetchArticles);
   border-bottom: 1px solid var(--color-border-muted);
 }
 
+.header-actions {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+}
+
+.search-box {
+  width: 280px;
+}
+
+.search-input :deep(.el-input__wrapper) {
+  border-radius: 20px;
+  box-shadow: none;
+  border: 1px solid var(--color-border-default);
+}
+
+.search-input :deep(.el-input__wrapper:hover),
+.search-input :deep(.el-input__wrapper.is-focus) {
+  border-color: var(--color-accent-muted);
+}
+
 .section-title {
   font-size: 24px;
   font-weight: 600;
@@ -203,6 +254,7 @@ onMounted(fetchArticles);
 .articles-stats {
   font-size: 14px;
   color: var(--color-fg-muted);
+  white-space: nowrap;
 }
 
 .articles-list {
@@ -330,7 +382,18 @@ onMounted(fetchArticles);
   .articles-header {
     flex-direction: column;
     align-items: flex-start;
-    gap: 8px;
+    gap: 12px;
+  }
+
+  .header-actions {
+    flex-direction: column;
+    align-items: stretch;
+    width: 100%;
+    gap: 12px;
+  }
+
+  .search-box {
+    width: 100%;
   }
 
   .article-card {

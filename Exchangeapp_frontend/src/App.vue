@@ -24,6 +24,10 @@
             <router-link to="/register" class="btn btn-secondary header-btn">注册</router-link>
           </div>
           <div class="user-menu" v-else>
+            <router-link to="/articles/create" class="create-article-btn">
+              <el-icon><Edit /></el-icon>
+              <span>创作</span>
+            </router-link>
             <el-dropdown @command="handleUserMenu">
               <div class="user-avatar">
                 <el-avatar :size="32" :src="authStore.user?.avatar || defaultAvatar">
@@ -34,8 +38,9 @@
               </div>
               <template #dropdown>
                 <el-dropdown-menu>
-                  <el-dropdown-item command="profile">个人资料</el-dropdown-item>
-                  <el-dropdown-item command="settings">设置</el-dropdown-item>
+                  <el-dropdown-item command="create">创作文章</el-dropdown-item>
+                  <el-dropdown-item command="profile">个人中心</el-dropdown-item>
+                  <el-dropdown-item command="settings">账户设置</el-dropdown-item>
                   <el-dropdown-item divided command="logout">退出登录</el-dropdown-item>
                 </el-dropdown-menu>
               </template>
@@ -54,7 +59,7 @@
 import { ref, watch } from 'vue';
 import { useRouter, useRoute } from 'vue-router';
 import { useAuthStore } from './store/auth';
-import { ArrowDown } from '@element-plus/icons-vue';
+import { ArrowDown, Edit } from '@element-plus/icons-vue';
 
 const router = useRouter();
 const route = useRoute();
@@ -81,11 +86,11 @@ const handleUserMenu = (command: string) => {
     authStore.logout();
     router.push({ name: 'Home' });
   } else if (command === 'profile') {
-    // Navigate to profile page when implemented
-    console.log('Navigate to profile');
+    router.push({ name: 'UserProfile' });
   } else if (command === 'settings') {
-    // Navigate to settings page when implemented
-    console.log('Navigate to settings');
+    router.push({ name: 'UserProfile', query: { tab: 'settings' } });
+  } else if (command === 'create') {
+    router.push({ name: 'CreateArticle' });
   }
 };
 </script>
@@ -154,6 +159,26 @@ const handleUserMenu = (command: string) => {
 .header-right {
   display: flex;
   align-items: center;
+  gap: 12px;
+}
+
+.create-article-btn {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 14px;
+  background: rgba(255, 255, 255, 0.15);
+  color: #fff;
+  text-decoration: none;
+  border-radius: 6px;
+  font-size: 14px;
+  font-weight: 500;
+  transition: all 0.2s ease;
+}
+
+.create-article-btn:hover {
+  background: rgba(255, 255, 255, 0.25);
+  transform: translateY(-1px);
 }
 
 .user-menu {
