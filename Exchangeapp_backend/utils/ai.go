@@ -197,3 +197,93 @@ func ModerateContent(text string) (bool, string, error) {
 	// 在生产环境中，这种情况应该记录日志以便排查问题
 	return true, "", nil
 }
+
+// GeneratePreview 使用 OpenAI API 生成文章预览/摘要
+//
+// 参数:
+//   - content: 文章内容
+//
+// 返回值:
+//   - string: 生成的预览文本
+//   - error: 如果调用 API 时发生错误，返回错误信息；如果成功，返回 nil
+func GeneratePreview(content string) (string, error) {
+	// ===================== 配置检查 =====================
+	if config.AppConfig.AI.BaseURL == "" || config.AppConfig.AI.APIKey == "" || config.AppConfig.AI.APIKey == "your-api-key" {
+		// AI 未配置，返回默认预览（前200个字符）
+		if len(content) > 200 {
+			return content[:200] + "...", nil
+		}
+		return content, nil
+	}
+
+	// ===================== 构建提示词 =====================
+	systemPrompt := `你是一个文章摘要生成助手。请根据文章内容生成一个简洁的预览摘要。
+	要求：
+	- 长度控制在50-100字之间
+	- 能够准确概括文章主旨
+	- 语言简洁流畅
+	- 直接输出摘要内容，不要添加任何前缀或解释`
+
+	userContent := fmt.Sprintf("请为以下文章生成预览摘要：\n\n%s", content)
+
+	// ===================== 构建请求体 =====================
+	reqBody := ChatRequest{
+		Model: config.AppConfig.AI.Model,
+		Messages: []ChatMessage{
+			{Role: "system", Content: systemPrompt},
+			{Role: "user", Content: userContent},
+		},
+	}
+
+	// ===================== 序列化请求体 =====================
+	jsonBody, err := json.Marshal(reqBody)
+	if err != nil {
+		return "", fmt.Errorf("请求序列化失败: %w", err)
+	}
+
+	// ===================== 创建 HTTP 客户端 =====================
+	timeout := time.Duration(config.AppConfig.AI.Timeout) * time.Second
+	client := &http.Client{Timeout: timeout}
+
+	// ===================== 创建 HTTP 请求 =====================
+	req, err := http.NewRequest("POST", config.AppConfig.AI.BaseURL+"/chat/completions", bytes.NewBuffer(jsonBody))
+	if err != nil {
+		return "", fmt.Errorf("创建请求失败: %w", err)
+	}
+
+	// ===================== 设置请求头 =====================
+	req.Header.Set("Content-Type", "application/json")
+	req.Header.Set("Authorization", "Bearer "+config.AppConfig.AI.APIKey)
+
+	// ===================== 发送请求 =====================
+	resp, err := client.Do(req)
+	if err != nil {
+		return "", fmt.Errorf("发送请求失败: %w", err)
+	}
+	defer resp.Body.Close()
+
+	// ===================== 读取响应体 =====================
+	body, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return "", fmt.Errorf("读取响应失败: %w", err)
+	}
+
+	// ===================== 检查响应状态码 =====================
+	if resp.StatusCode != http.StatusOK {
+		return "", fmt.Errorf("API 返回错误状态码 %d: %s", resp.StatusCode, string(body))
+	}
+
+	// ===================== 解析响应 JSON =====================
+	var chatResp ChatResponse
+	if err := json.Unmarshal(body, &chatResp); err != nil {
+		return "", fmt.Errorf("解析响应失败: %w", err)
+	}
+
+	// ===================== 检查响应内容 =====================
+	if len(chatResp.Choices) == 0 {
+		return "", fmt.Errorf("AI 未返回任何内容")
+	}
+
+	// 返回生成的预览内容
+	return chatResp.Choices[0].Message.Content, nil
+}

@@ -41,6 +41,17 @@ func CreateArticle(ctx *gin.Context) {
 		return
 	}
 
+	// 如果用户没有提供 Preview，则使用 AI 自动生成
+	if articleData.Preview == "" {
+		generatedPreview, err := utils.GeneratePreview(articleData.Content)
+		if err != nil {
+			// AI 生成失败，返回错误或提示用户手动填写
+			ctx.JSON(http.StatusInternalServerError, gin.H{"error": "AI生成预览失败: " + err.Error()})
+			return
+		}
+		articleData.Preview = generatedPreview
+	}
+
 	// 从上下文中获取用户信息
 	username, exists := ctx.Get("username")
 	if !exists {
