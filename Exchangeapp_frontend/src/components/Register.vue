@@ -129,11 +129,25 @@ const register = async () => {
 <style scoped>
 .auth-page {
   min-height: 100vh;
-  background-color: var(--color-canvas-default);
+  background: linear-gradient(180deg, #faf8f5 0%, #f5f2ed 100%);
   display: flex;
   align-items: center;
   justify-content: center;
   padding: 48px 24px;
+  position: relative;
+}
+
+.auth-page::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-image:
+    radial-gradient(circle at 10% 20%, rgba(196, 167, 125, 0.1) 0%, transparent 40%),
+    radial-gradient(circle at 90% 80%, rgba(139, 115, 85, 0.08) 0%, transparent 40%);
+  pointer-events: none;
 }
 
 .auth-container {
@@ -141,16 +155,18 @@ const register = async () => {
   gap: 80px;
   max-width: 1024px;
   width: 100%;
+  position: relative;
+  z-index: 1;
 }
 
 .auth-card {
   flex: 1;
   max-width: 400px;
-  background-color: var(--color-canvas-overlay);
-  border: 1px solid var(--color-border-default);
-  border-radius: var(--border-radius-large);
-  box-shadow: var(--shadow-medium);
-  padding: 32px;
+  background: #ffffff;
+  border: 1px solid #e8e4de;
+  border-radius: 16px;
+  box-shadow: 0 4px 24px rgba(45, 42, 38, 0.08);
+  padding: 40px;
 }
 
 .auth-header {
@@ -161,15 +177,16 @@ const register = async () => {
 
 .auth-title {
   margin: 0 0 8px;
-  font-size: 24px;
-  font-weight: 600;
-  color: var(--color-fg-default);
+  font-family: 'Playfair Display', 'Noto Serif SC', Georgia, serif;
+  font-size: 28px;
+  font-weight: 700;
+  color: #2d2a26;
 }
 
 .auth-subtitle {
   margin: 0;
   font-size: 16px;
-  color: var(--color-fg-muted);
+  color: #8b7355;
 }
 
 .auth-form {
@@ -181,43 +198,61 @@ const register = async () => {
 }
 
 .form-item :deep(.el-form-item__label) {
-  color: var(--color-fg-default);
-  font-weight: 500;
+  color: #2d2a26;
+  font-weight: 600;
   margin-bottom: 8px;
-  font-size: 14px;
+  font-size: 15px;
 }
 
 .auth-input :deep(.el-input__wrapper) {
   width: 100%;
+  border-radius: 10px;
+  box-shadow: none;
+  border: 2px solid #e8e4de;
+}
+
+.auth-input :deep(.el-input__wrapper:hover),
+.auth-input :deep(.el-input__wrapper.is-focus) {
+  border-color: #c4a77d;
 }
 
 .auth-btn {
   width: 100%;
-  height: 48px;
-  font-size: 16px;
-  font-weight: 500;
+  height: 52px;
+  font-size: 17px;
+  font-weight: 600;
+  background: linear-gradient(135deg, #c4a77d 0%, #a68b5b 100%);
+  border: none;
+  border-radius: 10px;
+  color: #fff;
+  transition: all 0.2s ease;
+}
+
+.auth-btn:hover:not(:disabled) {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(166, 139, 91, 0.4);
 }
 
 .auth-footer {
   text-align: center;
   padding-top: 24px;
-  border-top: 1px solid var(--color-border-muted);
+  border-top: 1px solid #e8e4de;
 }
 
 .auth-text {
   margin: 0;
   font-size: 14px;
-  color: var(--color-fg-muted);
+  color: #8b7355;
 }
 
 .auth-link {
-  color: var(--color-accent-fg);
+  color: #c4a77d;
   text-decoration: none;
-  font-weight: 500;
+  font-weight: 600;
 }
 
 .auth-link:hover {
-  text-decoration: underline;
+  color: #a68b5b;
 }
 
 .auth-info {
@@ -228,16 +263,17 @@ const register = async () => {
 
 .info-title {
   margin: 0 0 16px;
-  font-size: 32px;
-  font-weight: 600;
-  color: var(--color-fg-default);
+  font-family: 'Playfair Display', 'Noto Serif SC', Georgia, serif;
+  font-size: 36px;
+  font-weight: 700;
+  color: #2d2a26;
 }
 
 .info-description {
   margin: 0 0 32px;
   font-size: 18px;
-  line-height: 1.5;
-  color: var(--color-fg-muted);
+  line-height: 1.6;
+  color: #8b7355;
 }
 
 .info-features {
@@ -248,10 +284,10 @@ const register = async () => {
 
 .info-features li {
   position: relative;
-  padding-left: 28px;
-  margin-bottom: 12px;
+  padding-left: 32px;
+  margin-bottom: 16px;
   font-size: 16px;
-  color: var(--color-fg-default);
+  color: #2d2a26;
 }
 
 .info-features li::before {
@@ -259,8 +295,9 @@ const register = async () => {
   position: absolute;
   left: 0;
   top: 0;
-  color: var(--color-success-fg);
+  color: #c4a77d;
   font-weight: 600;
+  font-size: 18px;
 }
 
 @media (max-width: 768px) {

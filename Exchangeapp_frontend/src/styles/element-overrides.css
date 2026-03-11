@@ -32,20 +32,20 @@
 /* Container */
 .el-container {
   height: 100vh;
-  background-color: var(--color-canvas-default);
+  background: linear-gradient(180deg, #faf8f5 0%, #f5f2ed 100%);
 }
 
 .el-header {
   padding: 0;
-  background-color: var(--color-header-bg);
+  background-color: #5d4e37;
   height: 64px !important;
   line-height: 64px;
-  box-shadow: 0 1px 0 rgba(31, 35, 40, 0.1);
+  box-shadow: 0 2px 8px rgba(45, 42, 38, 0.15);
 }
 
 .el-main {
   padding: var(--spacing-large);
-  background-color: var(--color-canvas-default);
+  background: linear-gradient(180deg, #faf8f5 0%, #f5f2ed 100%);
   overflow-y: auto;
 }
 

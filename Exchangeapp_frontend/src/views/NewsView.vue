@@ -150,7 +150,7 @@ onMounted(fetchArticles);
 <style scoped>
 .news-container {
   min-height: calc(100vh - 64px);
-  background-color: var(--color-canvas-default);
+  background: linear-gradient(180deg, #faf8f5 0%, #f5f2ed 100%);
 }
 
 .container {
@@ -166,14 +166,15 @@ onMounted(fetchArticles);
 
 .page-title {
   margin-bottom: 8px;
-  font-size: 32px;
-  font-weight: 600;
-  color: var(--color-fg-default);
+  font-family: 'Playfair Display', 'Noto Serif SC', Georgia, serif;
+  font-size: 42px;
+  font-weight: 700;
+  color: #2d2a26;
 }
 
 .page-description {
   font-size: 18px;
-  color: var(--color-fg-muted);
+  color: #8b7355;
 }
 
 .auth-prompt {
@@ -184,8 +185,8 @@ onMounted(fetchArticles);
 .blankslate {
   padding: 80px 40px;
   text-align: center;
-  background-color: var(--color-canvas-subtle);
-  border: 1px solid var(--color-border-default);
+  background-color: #faf8f5;
+  border: 1px solid #e8e4de;
   border-radius: var(--border-radius-large);
 }
 
@@ -197,7 +198,7 @@ onMounted(fetchArticles);
 
 .blankslate p {
   margin-bottom: 24px;
-  color: var(--color-fg-muted);
+  color: #8b7355;
 }
 
 .loading-section {
@@ -220,7 +221,7 @@ onMounted(fetchArticles);
   align-items: center;
   margin-bottom: 24px;
   padding-bottom: 16px;
-  border-bottom: 1px solid var(--color-border-muted);
+  border-bottom: 1px solid #e8e4de;
 }
 
 .header-actions {
@@ -236,24 +237,24 @@ onMounted(fetchArticles);
 .search-input :deep(.el-input__wrapper) {
   border-radius: 20px;
   box-shadow: none;
-  border: 1px solid var(--color-border-default);
+  border: 1px solid #e8e4de;
 }
 
 .search-input :deep(.el-input__wrapper:hover),
 .search-input :deep(.el-input__wrapper.is-focus) {
-  border-color: var(--color-accent-muted);
+  border-color: #c4a77d;
 }
 
 .section-title {
   font-size: 24px;
   font-weight: 600;
-  color: var(--color-fg-default);
+  color: #2d2a26;
   margin: 0;
 }
 
 .articles-stats {
   font-size: 14px;
-  color: var(--color-fg-muted);
+  color: #8b7355;
   white-space: nowrap;
 }
 
@@ -265,14 +266,14 @@ onMounted(fetchArticles);
 
 .article-card {
   padding: 24px;
-  background-color: var(--color-canvas-overlay);
-  border: 1px solid var(--color-border-default);
+  background-color: #ffffff;
+  border: 1px solid #e8e4de;
   border-radius: var(--border-radius-large);
   transition: all 0.2s ease-out;
 }
 
 .article-card:hover {
-  border-color: var(--color-accent-muted);
+  border-color: #c4a77d;
   box-shadow: var(--shadow-medium);
 }
 
@@ -289,7 +290,7 @@ onMounted(fetchArticles);
 
 .article-date {
   font-size: 14px;
-  color: var(--color-fg-muted);
+  color: #8b7355;
 }
 
 .article-category {
@@ -305,19 +306,19 @@ onMounted(fetchArticles);
 }
 
 .article-link {
-  color: var(--color-fg-default);
+  color: #2d2a26;
   text-decoration: none;
   cursor: pointer;
 }
 
 .article-link:hover {
-  color: var(--color-accent-fg);
+  color: #c4a77d;
   text-decoration: underline;
 }
 
 .article-preview {
   margin: 0;
-  color: var(--color-fg-muted);
+  color: #8b7355;
   line-height: 1.5;
   display: -webkit-box;
   -webkit-line-clamp: 2;
@@ -330,7 +331,7 @@ onMounted(fetchArticles);
   justify-content: space-between;
   align-items: center;
   padding-top: 16px;
-  border-top: 1px solid var(--color-border-muted);
+  border-top: 1px solid #e8e4de;
 }
 
 .article-author {
@@ -340,12 +341,12 @@ onMounted(fetchArticles);
 }
 
 .author-avatar {
-  border: 1px solid var(--color-border-default);
+  border: 1px solid #e8e4de;
 }
 
 .author-name {
   font-size: 14px;
-  color: var(--color-fg-muted);
+  color: #8b7355;
 }
 
 .article-actions {
@@ -360,17 +361,17 @@ onMounted(fetchArticles);
   padding: 6px 12px;
   font-size: 14px;
   font-weight: 500;
-  color: var(--color-accent-fg);
+  color: #c4a77d;
   background-color: transparent;
-  border: 1px solid var(--color-border-default);
+  border: 1px solid #e8e4de;
   border-radius: var(--border-radius-medium);
   cursor: pointer;
   transition: all 0.2s ease-out;
 }
 
 .action-btn:hover {
-  background-color: var(--color-accent-subtle);
-  border-color: var(--color-accent-muted);
+  background-color: #faf8f5;
+  border-color: #c4a77d;
   text-decoration: none;
 }
 
