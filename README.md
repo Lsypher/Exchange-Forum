@@ -100,7 +100,8 @@ Exchange-Forum/
 │   ├── router/
 │   │   └── router.go             # 路由注册与 CORS 配置
 │   ├── utils/
-│   │   └── utils.go              # JWT 生成/解析、bcrypt 密码工具
+│   │   ├── utils.go              # JWT 生成/解析、bcrypt 密码工具
+│   │   └── ai.go                 # AI 内容审核（OpenAI API）
 │   ├── global/
 │   │   └── global.go             # 全局 DB / Redis 连接实例
 │   ├── main.go                   # 入口：初始化 & 优雅停机
