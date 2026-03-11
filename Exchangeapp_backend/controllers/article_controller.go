@@ -90,14 +90,15 @@ func GetArticles(ctx *gin.Context) {
 		// 定义一个 Article 结构体切片变量 articles，用于存储从数据库中的 articles 表查询到的文章列表
 		var articles []models.Article
 
-		// 执行两条 SQL，Find(&articles) 查数据库的文章列表，Preload("User") 批量查关联的用户信息，避免 N+1 查询问题，如果查询失败，返回一个 HTTP 404 错误响应，包含错误信息
+		// 执行两条 SQL，Find(&articles) 查数据库的文章列表，Preload("User") 批量查关联的用户信息，避免 N+1 查询问题，如果查询失败，且错误类型是 gorm.ErrRecordNotFound，表示数据库中没有文章，此时将 articles 变量设置为一个空切片，以便继续处理并缓存结果，防止缓存穿透；如果查询过程中发生其他错误，返回一个 HTTP 500 错误响应，包含错误信息
 		if err := global.Db.Preload("User").Find(&articles).Error; err != nil { // Find：旨在查找多条记录。它通常用于查询列表，不会自动加 LIMIT 1。与下面的 GetArticleByID 中的 First 不同，First 旨在查找单条记录，通常会自动加 LIMIT 1。
 			if errors.Is(err, gorm.ErrRecordNotFound) {
-				ctx.JSON(http.StatusNotFound, gin.H{"error": err.Error()})
+				// 即使没有文章，也继续处理空切片并缓存结果，防止缓存穿透
+				articles = []models.Article{}
 			} else {
 				ctx.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+				return
 			}
-			return
 		}
 
 		// 若查询成功，将 articles 变量中的数据转换为 JSON 格式，并存储在 articlesJSON 变量中，如果转换失败，返回一个 HTTP 500 错误响应，包含错误信息
