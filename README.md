@@ -2,8 +2,8 @@
 
 > 基于 **Go + Gin** 构建的汇率论坛社区，提供用户认证、汇率查询、文章发布和互动点赞功能。
 
-![Go Version](https://img.shields.io/badge/Go-1.25+-00ADD8?style=flat&logo=go)
-![Gin](https://img.shields.io/badge/Gin-v1.11-blue?style=flat)
+![Go Version](https://img.shields.io/badge/Go-1.25.1-00ADD8?style=flat&logo=go)
+![Gin](https://img.shields.io/badge/Gin-v1.11.0-blue?style=flat)
 ![MySQL](https://img.shields.io/badge/MySQL-8.0+-4479A1?style=flat&logo=mysql&logoColor=white)
 ![Redis](https://img.shields.io/badge/Redis-6.0+-DC382D?style=flat&logo=redis&logoColor=white)
 ![Vue3](https://img.shields.io/badge/Vue-3.x-42b883?style=flat&logo=vue.js)
@@ -16,11 +16,14 @@
 
 -  **JWT 无状态认证**：使用 JWT（HMAC-SHA256）+ bcrypt 实现安全的用户注册与登录，Token 有效期 72 小时
 -  **Redis 缓存加速**：文章列表采用 Cache Aside 模式缓存（TTL 10 分钟），发布新文章时主动删除旧缓存，保证数据一致性
+-  **Redis 缓存穿透保护**：空结果也会缓存，防止缓存击穿
 -  **Redis 原子计数**：点赞功能使用 Redis `INCR` 原子操作，天然避免并发写入冲突
 -  **GORM 连接池**：配置 MySQL 连接池（最大空闲连接 10，最大连接数 100），启动时自动 `AutoMigrate` 建表
 -  **CORS 跨域支持**：通过 `gin-contrib/cors` 中间件配置细粒度跨域策略
 -  **Viper 配置管理**：使用 Viper 读取 YAML 配置，支持灵活的环境隔离
 -  **优雅停机**：`main.go` 实现 HTTP 服务器优雅关闭，保障服务平滑重启
+-  **AI 内容审核**：创建文章时调用 OpenAI API 审核内容（暴力、色情、违法）
+-  **Markdown 编辑器**：文章创建支持 Markdown 格式
 
 ##  系统架构
 
@@ -56,7 +59,7 @@
 
 | 层级 | 技术 | 版本 | 用途 |
 |------|------|------|------|
-| 语言 | Go | 1.25+ | 后端核心语言 |
+| 语言 | Go | 1.25.1 | 后端核心语言 |
 | Web 框架 | Gin | v1.11.0 | HTTP 路由与中间件 |
 | ORM | GORM | v1.31.1 | 数据库操作与自动迁移 |
 | 数据库 | MySQL | 8.0+ | 持久化存储 |
@@ -64,10 +67,14 @@
 | 认证 | JWT + bcrypt | jwt v3.2.2 | 无状态身份验证 |
 | 配置 | Viper | v1.21.0 | YAML 配置管理 |
 | 跨域 | gin-contrib/cors | v1.7.6 | CORS 处理 |
-| 前端框架 | Vue 3 + TypeScript | Vue 3.4 | 响应式 UI |
-| 前端构建 | Vite | v5.4 | 前端工程化 |
-| 状态管理 | Pinia | v2.1 | 前端状态管理 |
-| UI 组件 | Element Plus + Vant | — | 桌面端 & 移动端适配 |
+| 前端框架 | Vue 3 + TypeScript | Vue 3.4.21 | 响应式 UI |
+| 前端构建 | Vite | v5.4.0 | 前端工程化 |
+| 状态管理 | Pinia | v2.1.7 | 前端状态管理 |
+| 路由 | Vue Router | v4.3.2 | 前端路由管理 |
+| UI 组件 | Element Plus | 2.7.4 | 桌面端组件库 |
+| UI 组件 | Vant | 4.9.0 | 移动端组件库 |
+| HTTP 客户端 | Axios | 1.7.3 | API 请求 |
+| Markdown | marked | 12.0.0 | Markdown 解析渲染 |
 
 ##  项目结构
 
@@ -106,11 +113,26 @@ Exchange-Forum/
     │   ├── router/               # Vue Router 配置
     │   ├── store/                # Pinia 状态管理
     │   ├── types/                # TypeScript 类型定义
+    │   ├── styles/               # 样式文件
+    │   │   ├── github-theme.css  # GitHub 风格 Markdown 样式
+    │   │   └── element-overrides.css  # Element Plus 样式覆盖
     │   ├── axios.ts              # Axios 实例与拦截器配置
     │   └── main.ts               # 前端入口
     ├── vite.config.ts            # Vite 配置（含 API 代理）
     └── package.json
 ```
+
+##  前端页面
+
+| 页面 | 文件 | 说明 |
+|------|------|------|
+| 首页 | `HomeView.vue` | 平台介绍和功能入口 |
+| 货币兑换 | `CurrencyExchangeView.vue` | 实时汇率计算 |
+| 文章列表 | `NewsView.vue` | 论坛文章列表，需要登录访问 |
+| 文章详情 | `NewsDetailView.vue` | Markdown 渲染、点赞、收藏、评论 |
+| 创建文章 | `CreateArticleView.vue` | Markdown 编辑器，支持 AI 内容审核 |
+| 用户中心 | `UserProfileView.vue` | 个人中心（我的文章、收藏文章、账户设置） |
+| 登录/注册 | `LoginView.vue` / `RegisterView.vue` | 用户认证 |
 
 ##  快速开始
 
@@ -118,7 +140,7 @@ Exchange-Forum/
 
 | 工具 | 最低版本 |
 |------|---------|
-| Go | 1.25+ |
+| Go | 1.25.1 |
 | Node.js | 16+ |
 | MySQL | 8.0+ |
 | Redis | 6.0+ |
@@ -218,14 +240,21 @@ npm run build
 |------|------|------|
 | GET  | `/api/articles` | 获取文章列表（Redis 缓存 10 分钟） |
 | GET  | `/api/articles/:id` | 获取指定文章详情 |
-| POST | `/api/articles` | 发布新文章，同时删除列表缓存 |
+| POST | `/api/articles` | 发布新文章（需 AI 审核），同时删除列表缓存 |
 
 ### 点赞接口
 
 | 方法 | 路径 | 说明 |
 |------|------|------|
-| POST | `/api/articles/:id/like` | 点赞文章（Redis INCR 原子操作） |
+| POST | `/api/articles/:id/like` | 点赞文章（Redis INCR 原子操作），返回点赞数 |
 | GET  | `/api/articles/:id/like` | 获取文章点赞数 |
+
+**响应示例：**
+```json
+{
+  "likes": 42
+}
+```
 
 ##  核心设计
 
@@ -234,7 +263,10 @@ npm run build
 | 场景 | Key 格式 | TTL | 策略 |
 |------|---------|-----|------|
 | 文章列表缓存 | `articles_cache` | 10 分钟 | Cache Aside：发布新文章时主动删除缓存 |
+| 文章列表空结果缓存 | `articles_cache` | 1 分钟 | 缓存穿透保护：空结果也缓存，防止缓存击穿 |
 | 文章点赞计数 | `article:{id}:likes` | 永久 | Redis `INCR` 原子操作，无并发冲突 |
+
+> **缓存穿透保护**：当数据库查询结果为空时，仍会将空结果存入 Redis（TTL 1 分钟），避免大量请求直接穿透到数据库。
 
 ### JWT 认证流程
 
