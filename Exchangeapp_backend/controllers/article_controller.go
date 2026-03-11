@@ -83,7 +83,7 @@ func CreateArticle(ctx *gin.Context) {
 // 获取文章列表函数，接收一个 Gin 上下文对象作为参数，处理获取文章列表的 HTTP 请求
 func GetArticles(ctx *gin.Context) {
 
-	// 使用 Get 方法从 Redis 中获取与 cachekey 相关的缓存数据，将结果存储在 cachedData 变量中，如果获取失败
+	// 使用 Get 方法从 Redis 中获取与 cachekey 相关的缓存数据，将结果存储在 cachedData 变量中
 	cachedData, err := global.RedisDB.Get(cachekey).Result()
 	// 如果获取失败，且错误类型是 redis.Nil，表示缓存中没有数据，此时需要从数据库中查询文章列表，并将结果存储到 Redis 中，以便下次获取时能够直接从缓存中获取数据，提高性能和响应速度
 	if err == redis.Nil {
@@ -93,7 +93,7 @@ func GetArticles(ctx *gin.Context) {
 		// 执行两条 SQL，Find(&articles) 查数据库的文章列表，Preload("User") 批量查关联的用户信息，避免 N+1 查询问题，如果查询失败，且错误类型是 gorm.ErrRecordNotFound，表示数据库中没有文章，此时将 articles 变量设置为一个空切片，以便继续处理并缓存结果，防止缓存穿透；如果查询过程中发生其他错误，返回一个 HTTP 500 错误响应，包含错误信息
 		if err := global.Db.Preload("User").Find(&articles).Error; err != nil { // Find：旨在查找多条记录。它通常用于查询列表，不会自动加 LIMIT 1。与下面的 GetArticleByID 中的 First 不同，First 旨在查找单条记录，通常会自动加 LIMIT 1。
 			if errors.Is(err, gorm.ErrRecordNotFound) {
-				// 即使没有文章，也继续处理空切片并缓存结果，防止缓存穿透
+				// 即使数据库中没有文章，也继续处理空切片并缓存结果，防止缓存穿透
 				articles = []models.Article{}
 			} else {
 				ctx.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
