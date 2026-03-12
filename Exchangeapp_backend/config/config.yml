@@ -14,7 +14,7 @@ jwt:
   Secret: "secret"
 
 ai:
-  base_url: "https://api.openai.com/v1"
-  api_key: "your-api-key"
-  model: "gpt-3.5-turbo"
-  timeout: 30
+  BaseURL: "https://api.openai.com/v1"
+  APIKey: ""
+  Model: "gpt-3.5-turbo"
+  Timeout: 30

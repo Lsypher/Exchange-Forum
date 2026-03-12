@@ -9,7 +9,7 @@ type Article struct {
 	gorm.Model
 	Title   string `json:"title" binding:"required" gorm:"index:idx_article_title"`   // 文章标题，必须提供，添加索引以提升搜索性能
 	Content string `json:"content" binding:"required"`                               // 文章内容，必须提供
-	Preview string `json:"preview" binding:"required"`                               // 文章预览信息，必须提供
+	Preview string `json:"preview"`                                                // 文章预览信息，AI自动生成
 	UserID  uint   `json:"user_id" gorm:"not null;index:idx_article_user_id"`        // 用户ID，关联到用户，添加索引以提升查询性能
 	User    User   `json:"user" gorm:"foreignKey:UserID"`                            // 添加此行，用于预加载
 }
