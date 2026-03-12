@@ -26,20 +26,33 @@ func CreateExchangeRate(ctx *gin.Context) {
 	// 将当前的时间赋值给 exchangeRate 结构体的 Time 字段，以记录汇率数据的创建时间
 	exchangeRate.Time = time.Now()
 
-	// // 使用 AutoMigrate 方法进行自动迁移，确保数据库中存在与 ExchangeRate 结构体对应的表，如果迁移失败，返回一个 HTTP 500 错误响应，包含错误信息
-	// if err := global.Db.AutoMigrate(&exchangeRate); err != nil {
-	// 	ctx.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
-	// 	return
-	// }
+	// 先查找是否存在相同货币对的记录
+	var existingRate models.ExchangeRate
+	result := global.Db.Where("from_currency = ? AND to_currency = ?",
+		exchangeRate.FromCurrency, exchangeRate.ToCurrency).First(&existingRate)
 
-	// 使用 Creat 方法将 exchangeRate 变量中的数据插入数据库的 exchange_rates 表中，如果插入失败，返回一个 HTTP 500 错误响应，包含错误信息
-	if err := global.Db.Create(&exchangeRate).Error; err != nil {
-		ctx.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
-		return
+	if result.Error == gorm.ErrRecordNotFound {
+		// 不存在则创建
+		if err := global.Db.Create(&exchangeRate).Error; err != nil {
+			ctx.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+			return
+		}
+		ctx.JSON(http.StatusOK, exchangeRate)
+	} else if result.Error == nil {
+		// 存在则更新
+		existingRate.Rate = exchangeRate.Rate
+		existingRate.Time = exchangeRate.Time
+
+		// .Save() 方法会根据主键 ID 来更新记录，如果 ID 不存在则会创建新记录，但这里我们已经确认了记录存在，所以不会有重复创建的问题
+		if err := global.Db.Save(&existingRate).Error; err != nil {
+			ctx.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+			return
+		}
+		ctx.JSON(http.StatusOK, existingRate)
+	} else {
+		// 其他查询错误
+		ctx.JSON(http.StatusInternalServerError, gin.H{"error": result.Error.Error()})
 	}
-
-	// 返回一个 HTTP 200 成功响应，包含创建成功的汇率数据
-	ctx.JSON(http.StatusOK, exchangeRate)
 }
 
 // 获取汇率列表函数，接受一个 Gin 上下文对象作为参数，处理获取汇率列表的 HTTP 请求，首先定义一个 ExchangeRate 结构体切片变量 exchangeRates，用于存储从数据库中查询到的汇率列表，然后使用 Find 方法从数据库中的 exchange_rates 表查询所有的汇率数据，并将结果存储在 exchangeRates 变量中，如果查询失败，且错误类型是 gorm.ErrRecordNotFound，表示没有找到任何汇率数据，此时返回一个 HTTP 404 错误响应，包含错误信息 "No exchange rates found"，如果查询失败但错误类型不是 gorm.ErrRecordNotFound，表示查询过程中发生了其他错误，此时返回一个 HTTP 500 错误响应，包含错误信息 "Failed to retrieve exchange rates"，如果查询成功，则返回一个 HTTP 200 成功响应，包含查询到的汇率列表数据
