@@ -4,6 +4,7 @@ import (
 	"errors"
 	"exchangeapp/global"
 	"exchangeapp/models"
+	"log"
 	"net/http"
 	"time"
 
@@ -34,6 +35,7 @@ func CreateExchangeRate(ctx *gin.Context) {
 	if result.Error == gorm.ErrRecordNotFound {
 		// 不存在则创建
 		if err := global.Db.Create(&exchangeRate).Error; err != nil {
+			log.Printf("Failed to create exchange rate: %v", err)
 			ctx.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 			return
 		}
@@ -45,12 +47,14 @@ func CreateExchangeRate(ctx *gin.Context) {
 
 		// .Save() 方法会根据主键 ID 来更新记录，如果 ID 不存在则会创建新记录，但这里我们已经确认了记录存在，所以不会有重复创建的问题
 		if err := global.Db.Save(&existingRate).Error; err != nil {
+			log.Printf("Failed to update exchange rate: %v", err)
 			ctx.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 			return
 		}
 		ctx.JSON(http.StatusOK, existingRate)
 	} else {
 		// 其他查询错误
+		log.Printf("Failed to query exchange rate: %v", result.Error)
 		ctx.JSON(http.StatusInternalServerError, gin.H{"error": result.Error.Error()})
 	}
 }
@@ -67,6 +71,7 @@ func GetExchangeRates(ctx *gin.Context) {
 			ctx.JSON(http.StatusNotFound, gin.H{"error": "No exchange rates found"})
 			return
 		} else {
+			log.Printf("Failed to retrieve exchange rates: %v", err)
 			ctx.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to retrieve exchange rates"})
 			return
 		}
@@ -74,4 +79,23 @@ func GetExchangeRates(ctx *gin.Context) {
 
 	// 返回一个 HTTP 200 成功响应，包含查询到的汇率列表数据
 	ctx.JSON(http.StatusOK, exchangeRates)
+}
+
+// 获取货币列表函数，返回预设的常用货币列表
+func GetCurrencies(ctx *gin.Context) {
+	// 预设的常用货币列表
+	currencies := []string{
+		"USD", // 美元
+		"EUR", // 欧元
+		"CNY", // 人民币
+		"JPY", // 日元
+		"GBP", // 英镑
+		"HKD", // 港币
+		"KRW", // 韩元
+		"AUD", // 澳元
+		"CAD", // 加元
+		"CHF", // 瑞士法郎
+	}
+
+	ctx.JSON(http.StatusOK, currencies)
 }

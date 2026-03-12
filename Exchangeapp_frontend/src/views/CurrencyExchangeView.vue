@@ -2,8 +2,14 @@
   <div class="exchange-container">
     <div class="container">
       <div class="exchange-header">
-        <h1 class="page-title">货币兑换</h1>
-        <p class="page-description">实时汇率换算，支持全球主要货币</p>
+        <div class="header-content">
+          <h1 class="page-title">货币兑换</h1>
+          <p class="page-description">实时汇率换算，支持全球主要货币</p>
+        </div>
+        <el-button type="primary" @click="openCreateDialog" class="add-rate-btn">
+          <el-icon><Plus /></el-icon>
+          添加汇率
+        </el-button>
       </div>
 
       <div class="exchange-card">
@@ -109,12 +115,80 @@
         </div>
       </div>
     </div>
+
+    <el-dialog
+      v-model="createDialogVisible"
+      title="添加汇率"
+      width="420px"
+      :close-on-click-modal="false"
+      class="create-dialog"
+    >
+      <el-form
+        :model="createForm"
+        :rules="createRules"
+        ref="createFormRef"
+        label-position="top"
+        class="create-form"
+      >
+        <el-form-item label="源货币" prop="fromCurrency">
+          <el-select
+            v-model="createForm.fromCurrency"
+            placeholder="选择源货币"
+            class="currency-select"
+          >
+            <el-option
+              v-for="currency in currencies"
+              :key="currency"
+              :label="currency"
+              :value="currency"
+            />
+          </el-select>
+        </el-form-item>
+
+        <el-form-item label="目标货币" prop="toCurrency">
+          <el-select
+            v-model="createForm.toCurrency"
+            placeholder="选择目标货币"
+            class="currency-select"
+          >
+            <el-option
+              v-for="currency in currencies"
+              :key="currency"
+              :label="currency"
+              :value="currency"
+            />
+          </el-select>
+        </el-form-item>
+
+        <el-form-item label="汇率" prop="rate">
+          <el-input
+            v-model.number="createForm.rate"
+            type="number"
+            placeholder="输入汇率"
+            :min="0"
+          >
+            <template #prefix>
+              <span class="rate-prefix">1 {{ createForm.fromCurrency }} =</span>
+            </template>
+          </el-input>
+        </el-form-item>
+      </el-form>
+
+      <template #footer>
+        <div class="dialog-footer">
+          <el-button @click="createDialogVisible = false">取消</el-button>
+          <el-button type="primary" @click="submitCreate" :loading="createLoading">
+            提交
+          </el-button>
+        </div>
+      </template>
+    </el-dialog>
   </div>
 </template>  
   
 <script setup lang="ts">
 import { ref, onMounted, computed } from 'vue';
-import { Sort, Right, Clock } from '@element-plus/icons-vue';
+import { Sort, Right, Clock, Plus } from '@element-plus/icons-vue';
 import axios from '../axios';
 import { ElMessage } from 'element-plus';
 
@@ -137,6 +211,29 @@ const loading = ref(false);
 const currentRate = ref<number | null>(null);
 const currentTime = ref('');
 
+// 创建汇率相关
+const createDialogVisible = ref(false);
+const createLoading = ref(false);
+const createFormRef = ref();
+const createForm = ref({
+  fromCurrency: '',
+  toCurrency: '',
+  rate: null as number | null,
+});
+
+const createRules = {
+  fromCurrency: [
+    { required: true, message: '请选择源货币', trigger: 'change' },
+  ],
+  toCurrency: [
+    { required: true, message: '请选择目标货币', trigger: 'change' },
+  ],
+  rate: [
+    { required: true, message: '请输入汇率', trigger: 'blur' },
+    { type: 'number', min: 0.0001, message: '汇率必须大于0', trigger: 'blur' },
+  ],
+};
+
 const recentRates = computed(() => {
   if (!rates.value.length) return [];
   return rates.value.slice(0, 6).map(rate => ({
@@ -154,9 +251,28 @@ const displayRate = computed(() => {
 const fetchCurrencies = async () => {
   try {
     loading.value = true;
-    const response = await axios.get<ExchangeRate[]>('/exchangerates');
-    rates.value = response.data;
-    currencies.value = [...new Set(response.data.map((rate: ExchangeRate) => [rate.fromcurrency, rate.tocurrency]).flat())].sort();
+
+    // 首先调用新的货币列表 API 获取预设货币
+    try {
+      const currenciesResponse = await axios.get<string[]>('/currencies');
+      if (currenciesResponse.data && currenciesResponse.data.length > 0) {
+        currencies.value = currenciesResponse.data;
+      }
+    } catch {
+      // 如果货币列表 API 失败，使用备用方案
+      console.warn('Failed to fetch currencies from /currencies, using fallback');
+    }
+
+    // 同时获取汇率数据（用于显示最近汇率和实际兑换计算）
+    const ratesResponse = await axios.get<ExchangeRate[]>('/exchangerates');
+    rates.value = ratesResponse.data;
+
+    // 如果有汇率数据，合并货币列表（作为备用，确保已有汇率的货币也能选择）
+    if (ratesResponse.data && ratesResponse.data.length > 0) {
+      const rateCurrencies = [...new Set(ratesResponse.data.map((rate: ExchangeRate) => [rate.fromcurrency, rate.tocurrency]).flat())].sort();
+      // 合并两个列表并去重
+      currencies.value = [...new Set([...currencies.value, ...rateCurrencies])].sort();
+    }
   } catch (error) {
     ElMessage.error('获取汇率数据失败');
     console.error('Failed to load currencies', error);
@@ -207,6 +323,52 @@ const updateCurrentTime = () => {
   currentTime.value = new Date().toLocaleString('zh-CN');
 };
 
+const openCreateDialog = () => {
+  createForm.value = {
+    fromCurrency: '',
+    toCurrency: '',
+    rate: null,
+  };
+  createDialogVisible.value = true;
+};
+
+const submitCreate = async () => {
+  if (!createFormRef.value) return;
+
+  try {
+    await createFormRef.value.validate();
+  } catch {
+    return;
+  }
+
+  if (createForm.value.fromCurrency === createForm.value.toCurrency) {
+    ElMessage.warning('源货币和目标货币不能相同');
+    return;
+  }
+
+  try {
+    createLoading.value = true;
+    await axios.post('/exchangerates', {
+      fromcurrency: createForm.value.fromCurrency,
+      tocurrency: createForm.value.toCurrency,
+      rate: createForm.value.rate,
+    });
+    ElMessage.success('汇率创建成功');
+    createDialogVisible.value = false;
+    // 刷新汇率数据
+    await fetchCurrencies();
+  } catch (error: any) {
+    if (error.response?.data?.message) {
+      ElMessage.error(error.response.data.message);
+    } else {
+      ElMessage.error('创建汇率失败');
+    }
+    console.error('Failed to create exchange rate', error);
+  } finally {
+    createLoading.value = false;
+  }
+};
+
 onMounted(() => {
   fetchCurrencies();
   updateCurrentTime();
@@ -227,8 +389,27 @@ onMounted(() => {
 }
 
 .exchange-header {
-  text-align: center;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
   margin-bottom: 48px;
+}
+
+.header-content {
+  text-align: left;
+}
+
+.add-rate-btn {
+  background: linear-gradient(135deg, #c4a77d 0%, #a68b5b 100%);
+  border: none;
+  border-radius: 10px;
+  font-weight: 600;
+  padding: 12px 20px;
+}
+
+.add-rate-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(166, 139, 91, 0.4);
 }
 
 .page-title {
@@ -466,9 +647,39 @@ onMounted(() => {
   color: #2d2a26;
 }
 
+.create-form {
+  padding: 0 8px;
+}
+
+.create-form .el-form-item__label {
+  color: #2d2a26;
+  font-weight: 600;
+}
+
+.rate-prefix {
+  color: #8b7355;
+  font-size: 12px;
+}
+
+.dialog-footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: 12px;
+}
+
 @media (max-width: 768px) {
   .container {
     padding: 32px 16px;
+  }
+
+  .exchange-header {
+    flex-direction: column;
+    gap: 16px;
+    text-align: center;
+  }
+
+  .header-content {
+    text-align: center;
   }
 
   .exchange-card {

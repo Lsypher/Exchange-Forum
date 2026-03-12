@@ -7,8 +7,8 @@ import "time"
 // GORM 会将 ExchangeRate 结构体映射到数据库中的 exchange_rates 表
 type ExchangeRate struct {
 	ID           uint      `gorm:"primaryKey" json:"id"`
-	FromCurrency string    `gorm:"uniqueIndex:idx_currency_pair" json:"fromcurrency" binding:"required"` // 复合唯一索引，确保同一货币对只能有一条记录
-	ToCurrency   string    `gorm:"uniqueIndex:idx_currency_pair" json:"tocurrency" binding:"required"`   // 复合唯一索引，确保同一货币对只能有一条记录
+	FromCurrency string    `gorm:"type:varchar(10);uniqueIndex:idx_currency_pair" json:"fromcurrency" binding:"required"` // 复合唯一索引，确保同一货币对只能有一条记录
+	ToCurrency   string    `gorm:"type:varchar(10);uniqueIndex:idx_currency_pair" json:"tocurrency" binding:"required"`   // 复合唯一索引，确保同一货币对只能有一条记录
 	Rate         float64   `json:"rate" binding:"required"`
 	Time         time.Time `json:"time"`
 }

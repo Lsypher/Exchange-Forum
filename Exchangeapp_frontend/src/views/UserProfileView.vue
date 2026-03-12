@@ -213,6 +213,7 @@ import {
 } from '@element-plus/icons-vue';
 import { useAuthStore } from '../store/auth';
 import type { Article } from '../types/Article';
+import axios from '../axios';
 
 const router = useRouter();
 const authStore = useAuthStore();
@@ -249,13 +250,20 @@ const settings = reactive({
 });
 
 const loadMyArticles = async () => {
-  // 从本地存储获取我的文章（因为后端没有专门的API）
-  const stored = localStorage.getItem('my_articles');
-  if (stored) {
-    try {
-      myArticles.value = JSON.parse(stored);
-    } catch (e) {
-      myArticles.value = [];
+  // 调用后端API获取当前用户的文章
+  try {
+    const response = await axios.get('/articles/my');
+    myArticles.value = response.data;
+  } catch (error) {
+    console.error('Failed to load my articles:', error);
+    // 如果API调用失败，回退到本地存储
+    const stored = localStorage.getItem('my_articles');
+    if (stored) {
+      try {
+        myArticles.value = JSON.parse(stored);
+      } catch (e) {
+        myArticles.value = [];
+      }
     }
   }
 };

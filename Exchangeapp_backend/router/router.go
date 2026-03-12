@@ -34,6 +34,8 @@ func SetupRouter() *gin.Engine {
 	api := r.Group("/api")
 	// 定义一个 GET 请求的路由，路径是 /api/exchangerates，处理函数是 controllers.GetExchangeRates
 	api.GET("/exchangerates", controllers.GetExchangeRates)
+	// 货币列表接口，不需要认证
+	api.GET("/currencies", controllers.GetCurrencies)
 	// 使用 AuthMiddleware 中间件，使得以下的 API 路径的具体 HTTP 请求需要进行身份验证才能访问
 	api.Use(middlewares.AuthMiddleware())
 	{
@@ -41,6 +43,7 @@ func SetupRouter() *gin.Engine {
 
 		api.POST("/articles", controllers.CreateArticle)
 		api.GET("/articles", controllers.GetArticles)
+		api.GET("/articles/my", controllers.GetMyArticles)
 		api.GET("/articles/:id", controllers.GetArticleByID)
 
 		api.POST("/articles/:id/like", controllers.LikeArticle)

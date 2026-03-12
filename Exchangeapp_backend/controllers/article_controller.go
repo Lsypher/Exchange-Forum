@@ -179,3 +179,29 @@ func GetArticleByID(ctx *gin.Context) {
 
 	ctx.JSON(http.StatusOK, article)
 }
+
+// 获取当前用户文章列表函数，接收一个 Gin 上下文对象作为参数，处理获取当前登录用户文章列表的 HTTP 请求
+func GetMyArticles(ctx *gin.Context) {
+	// 从上下文中获取用户信息
+	username, exists := ctx.Get("username")
+	if !exists {
+		ctx.JSON(http.StatusUnauthorized, gin.H{"error": "User not authenticated"})
+		return
+	}
+
+	// 查询用户ID
+	var user models.User
+	if err := global.Db.Where("username = ?", username.(string)).First(&user).Error; err != nil {
+		ctx.JSON(http.StatusNotFound, gin.H{"error": "User not found"})
+		return
+	}
+
+	// 查询该用户的所有文章
+	var articles []models.Article
+	if err := global.Db.Where("user_id = ?", user.ID).Find(&articles).Error; err != nil {
+		ctx.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+
+	ctx.JSON(http.StatusOK, articles)
+}
