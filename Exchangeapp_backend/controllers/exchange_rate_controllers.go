@@ -32,7 +32,8 @@ func CreateExchangeRate(ctx *gin.Context) {
 	result := global.Db.Where("from_currency = ? AND to_currency = ?",
 		exchangeRate.FromCurrency, exchangeRate.ToCurrency).First(&existingRate)
 
-	if result.Error == gorm.ErrRecordNotFound {
+	switch result.Error {
+	case gorm.ErrRecordNotFound:
 		// 不存在则创建
 		if err := global.Db.Create(&exchangeRate).Error; err != nil {
 			log.Printf("Failed to create exchange rate: %v", err)
@@ -40,19 +41,18 @@ func CreateExchangeRate(ctx *gin.Context) {
 			return
 		}
 		ctx.JSON(http.StatusOK, exchangeRate)
-	} else if result.Error == nil {
+	case nil:
 		// 存在则更新
 		existingRate.Rate = exchangeRate.Rate
 		existingRate.Time = exchangeRate.Time
 
-		// .Save() 方法会根据主键 ID 来更新记录，如果 ID 不存在则会创建新记录，但这里我们已经确认了记录存在，所以不会有重复创建的问题
 		if err := global.Db.Save(&existingRate).Error; err != nil {
 			log.Printf("Failed to update exchange rate: %v", err)
 			ctx.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 			return
 		}
 		ctx.JSON(http.StatusOK, existingRate)
-	} else {
+	default:
 		// 其他查询错误
 		log.Printf("Failed to query exchange rate: %v", result.Error)
 		ctx.JSON(http.StatusInternalServerError, gin.H{"error": result.Error.Error()})
