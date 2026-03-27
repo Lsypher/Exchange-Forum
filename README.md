@@ -183,6 +183,8 @@ Exchange-Forum/
 | `docker-compose.yml` | 开发环境 | 挂载代码目录，支持热重载 |
 | `docker-compose.prod.yml` | 生产环境 | 资源限制，优化构建 |
 
+> **提示**：使用 Docker 部署后，打开浏览器访问 http://localhost 即可。Docker 会自动下载所需的 MySQL、Redis 等镜像并在容器中运行，**本地无需安装任何数据库或运行时**。
+
 1. **复制环境变量配置文件**
 
 ```bash
