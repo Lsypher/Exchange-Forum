@@ -14,14 +14,20 @@ func SetupRouter() *gin.Engine {
 	r := gin.Default()
 
 	// 配置 CORS 中间件，连接前后端，允许跨域请求
+	// 允许来自 localhost:5173 (开发) 和任何通过 Nginx代理的请求
 	r.Use(cors.New(cors.Config{
-		AllowOrigins:     []string{"http://localhost:5173"},                   // 允许来自 http://localhost:5173 的请求
-		AllowMethods:     []string{"GET", "POST", "PUT", "OPTIONS"},           // 允许的 HTTP 方法，包括 GET、POST、PUT 和 OPTIONS
-		AllowHeaders:     []string{"Origin", "Content-Type", "Authorization"}, // 允许的请求头，包括 Origin、Content-Type 和 Authorization
-		ExposeHeaders:    []string{"Content-Length"},                          // 允许暴露的响应头，包括 Content-Length
-		AllowCredentials: true,                                                // 允许携带凭证（如 cookies）
-		MaxAge:           12 * time.Hour,                                      // 预检请求的缓存时间，单位为小时，这里设置为 12 小时
+		AllowOrigins:     []string{"http://localhost:5173", "http://localhost", "http://frontend"},
+		AllowMethods:     []string{"GET", "POST", "PUT", "OPTIONS"},
+		AllowHeaders:     []string{"Origin", "Content-Type", "Authorization"},
+		ExposeHeaders:    []string{"Content-Length"},
+		AllowCredentials: true,
+		MaxAge:           12 * time.Hour,
 	}))
+
+	// 健康检查端点（用于 Docker 健康检查）
+	r.GET("/health", func(c *gin.Context) {
+		c.JSON(200, gin.H{"status": "ok"})
+	})
 
 	// 定义一个路由组 auth，处理与认证相关的 API 路径
 	auth := r.Group("/api/auth")

@@ -55,7 +55,7 @@
           <article v-for="article in filteredArticles" :key="article.ID" class="article-card">
             <div class="article-header">
               <div class="article-meta">
-                <span class="article-date">{{ formatDate(article.CreatedAt) }}</span>
+                <span class="article-date">{{ formatDate(article.CreatedAt || '') }}</span>
                 <el-tag v-if="article.category" size="small" class="article-category">
                   {{ article.category }}
                 </el-tag>
@@ -131,8 +131,8 @@ const fetchArticles = async () => {
   }
 };
 
-const viewDetail = (id: string) => {
-  router.push({ name: 'NewsDetail', params: { id } });
+const viewDetail = (id: number) => {
+  router.push({ name: 'NewsDetail', params: { id: String(id) } });
 };
 
 const formatDate = (dateString: string) => {

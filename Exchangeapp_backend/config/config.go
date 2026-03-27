@@ -2,6 +2,7 @@ package config
 
 import (
 	"log"
+	"os"
 
 	"github.com/spf13/viper"
 )
@@ -58,5 +59,23 @@ func InitConfig() {
 	// viper 将读取的 config.yml 配置文件中的内容解码到 AppConfig 结构体中，如果出错则记录日志并退出程序
 	if err := viper.Unmarshal(AppConfig); err != nil {
 		log.Fatalf("Unable to decode into struct: %v", err)
+	}
+
+	// 环境变量覆盖（用于 Docker 部署）
+	// 格式: DATABASE_DSN, REDIS_ADDR, JWT_SECRET, AI_APIKEY, AI_BASEURL
+	if dsn := os.Getenv("DATABASE_DSN"); dsn != "" {
+		AppConfig.Database.Dsn = dsn
+	}
+	if addr := os.Getenv("REDIS_ADDR"); addr != "" {
+		AppConfig.Redis.Addr = addr
+	}
+	if secret := os.Getenv("JWT_SECRET"); secret != "" {
+		AppConfig.JWT.Secret = secret
+	}
+	if apiKey := os.Getenv("AI_APIKEY"); apiKey != "" {
+		AppConfig.AI.APIKey = apiKey
+	}
+	if baseURL := os.Getenv("AI_BASEURL"); baseURL != "" {
+		AppConfig.AI.BaseURL = baseURL
 	}
 }

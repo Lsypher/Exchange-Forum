@@ -1,0 +1,105 @@
+# Docker Compose 开发环境配置
+# 使用方法: docker-compose up -d
+
+services:
+  # MySQL 数据库
+  mysql:
+    image: mysql:8.0
+    container_name: exchange_mysql
+    restart: unless-stopped
+    environment:
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:?请设置 MYSQL_ROOT_PASSWORD}
+      MYSQL_DATABASE: ${MYSQL_DATABASE:-test}
+      MYSQL_USER: ${MYSQL_USER:-exchange}
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD:?请设置 MYSQL_PASSWORD}
+    ports:
+      - "3306:3306"
+    volumes:
+      - mysql_data:/var/lib/mysql
+    networks:
+      - exchange_network
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # Redis 缓存
+  redis:
+    image: redis:7-alpine
+    container_name: exchange_redis
+    restart: unless-stopped
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    networks:
+      - exchange_network
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # 后端服务
+  backend:
+    build:
+      context: ./Exchangeapp_backend
+      dockerfile: Dockerfile
+    container_name: exchange_backend
+    restart: unless-stopped
+    ports:
+      - "8080:8080"
+    environment:
+      # 这些环境变量会覆盖 config.yml 中的配置
+      - DATABASE_DSN=${MYSQL_USER:-root}:${MYSQL_PASSWORD}@tcp(mysql:3306)/${MYSQL_DATABASE:-test}?charset=utf8mb4&parseTime=True&loc=Local
+      - REDIS_ADDR=redis:6379
+      - JWT_SECRET=${JWT_SECRET:?请设置 JWT_SECRET}
+      - AI_APIKEY=${AI_APIKEY:-}
+    volumes:
+      # 挂载配置目录（开发时可编辑 config.yml）
+      - ./Exchangeapp_backend/config:/app/config
+    depends_on:
+      mysql:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    networks:
+      - exchange_network
+    healthcheck:
+      test: ["CMD", "wget", "-q", "--spider", "http://localhost:8080/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+  # 前端服务 (使用构建后的静态文件 + Nginx)
+  frontend:
+    build:
+      context: ./Exchangeapp_frontend
+      dockerfile: Dockerfile
+    container_name: exchange_frontend
+    restart: unless-stopped
+    ports:
+      - "80:80"
+    depends_on:
+      - backend
+    networks:
+      - exchange_network
+    healthcheck:
+      test: ["CMD", "wget", "-q", "--spider", "http://localhost:80/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+# 网络定义
+networks:
+  exchange_network:
+    driver: bridge
+
+# 卷定义（持久化数据）
+volumes:
+  mysql_data:
+    driver: local
+  redis_data:
+    driver: local

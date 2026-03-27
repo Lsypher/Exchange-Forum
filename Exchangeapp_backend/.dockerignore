@@ -1,0 +1,22 @@
+# Git
+.git
+.gitignore
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# 构建产物
+exchangeapp
+exchangeapp.exe
+
+# 测试文件
+*_test.go
+
+# 其他
+*.md
+!README.md
+.env
+.env.*

@@ -5,7 +5,7 @@
         <article v-if="article" class="article">
           <header class="article-header">
             <div class="article-meta">
-              <span class="article-date">{{ formatDate(article.CreatedAt) }}</span>
+              <span class="article-date">{{ formatDate(article.CreatedAt || '') }}</span>
               <el-tag v-if="article.category" size="small" class="article-category">
                 {{ article.category }}
               </el-tag>

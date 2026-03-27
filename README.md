@@ -28,31 +28,48 @@
 ##  系统架构
 
 ```
-┌─────────────────────────────────────────────────────────┐
-│                      Client Layer                        │
-│         Vue 3 + TypeScript (Vite / Port 5173)           │
-└───────────────────────┬─────────────────────────────────┘
-                        │ HTTP / JSON (Axios)
-┌───────────────────────▼─────────────────────────────────┐
-│                   API Gateway Layer                      │
-│              Go + Gin Framework (Port 8080)             │
-│                                                          │
-│   ┌─────────────┐  ┌──────────────┐  ┌──────────────┐   │
-│   │ CORS 中间件  │  │ JWT 认证中间件 │  │   路由分组    │   │
-│   └─────────────┘  └──────────────┘  └──────────────┘   │
-│                                                          │
-│   ┌──────────────────────────────────────────────────┐   │
-│   │                  Controllers                     │   │
-│   │    Auth | Article | ExchangeRate | Like          │   │
-│   └──────────────────────────────────────────────────┘   │
-└──────────┬──────────────────────────┬────────────────────┘
-           │ GORM                     │ go-redis
-┌──────────▼───────────┐   ┌──────────▼──────────────────┐
-│      MySQL 8.0+      │   │         Redis 6.0+           │
-│  · users             │   │  · articles_cache (10min)    │
-│  · articles          │   │  · article:{id}:likes (永久) │
-│  · exchange_rates    │   └─────────────────────────────-┘
-└──────────────────────┘
+┌──────────────────────────────────────────────────────────────┐
+│                        Client Layer                           │
+│           Vue 3 + TypeScript (Vite / Port 5173)              │
+│                   或 Docker Nginx (Port 80)                  │
+└────────────────────────┬─────────────────────────────────────┘
+                         │ HTTP / JSON (Axios)
+┌────────────────────────▼────────────────────────────────────┐
+│                     API Gateway Layer                        │
+│               Go + Gin Framework (Port 8080)                 │
+│                                                              │
+│   ┌─────────────┐  ┌──────────────┐  ┌──────────────┐       │
+│   │ CORS 中间件  │  │ JWT 认证中间件 │  │  Health 检查  │       │
+│   └─────────────┘  └──────────────┘  └──────────────┘       │
+│                                                              │
+│   ┌──────────────────────────────────────────────────────┐   │
+│   │                  Controllers                          │   │
+│   │    Auth | Article | ExchangeRate | Like               │   │
+│   └──────────────────────────────────────────────────────┘   │
+└─────────────────────┬──────────────────────┬─────────────────┘
+                      │ GORM                 │ go-redis
+        ┌─────────────▼───────────┐  ┌──────▼─────────────────┐
+        │      MySQL 8.0+         │  │       Redis 6.0+       │
+        │  · users                │  │  · articles_cache      │
+        │  · articles             │  │  · article:{id}:likes  │
+        │  · exchange_rates       │  └────────────────────────┘
+        └─────────────────────────┘
+```
+
+### Docker Compose 架构
+
+```
+┌─────────────────────────────────────────────────────────────┐
+│                      Docker Compose                          │
+│                                                              │
+│  ┌──────────┐  ┌──────────┐  ┌──────────┐  ┌───────────┐  │
+│  │  nginx   │  │  backend  │  │   mysql  │  │   redis   │  │
+│  │(Frontend)│  │   (Go)    │  │          │  │           │  │
+│  │  :80     │  │  :8080    │  │  :3306   │  │  :6379    │  │
+│  └────┬─────┘  └────┬─────┘  └────┬─────┘  └─────┬─────┘  │
+└───────┼─────────────┼─────────────┼──────────────┼────────┘
+        │             │             │              │
+   Port 80     Port 8080      Port 3306      Port 6379
 ```
 
 ##  技术栈
@@ -92,7 +109,7 @@ Exchange-Forum/
 │   │   ├── exchange_rate_controllers.go  # 汇率数据管理
 │   │   └── like_controller.go    # 点赞（Redis INCR 原子操作）
 │   ├── middlewares/
-│   │   └── auth_middleware.go    # JWT 认证中间件
+│   │   └── auth_middleware.go     # JWT 认证中间件
 │   ├── models/
 │   │   ├── user.go               # 用户数据模型
 │   │   ├── article.go            # 文章数据模型
@@ -105,22 +122,31 @@ Exchange-Forum/
 │   ├── global/
 │   │   └── global.go             # 全局 DB / Redis 连接实例
 │   ├── main.go                   # 入口：初始化 & 优雅停机
+│   ├── Dockerfile                # Docker 构建配置
+│   ├── .dockerignore             # Docker 忽略文件
 │   ├── go.mod
 │   └── go.sum
-└── Exchangeapp_frontend/         # Vue 3 前端
-    ├── src/
-    │   ├── views/                # 页面组件
-    │   ├── components/           # 公共组件
-    │   ├── router/               # Vue Router 配置
-    │   ├── store/                # Pinia 状态管理
-    │   ├── types/                # TypeScript 类型定义
-    │   ├── styles/               # 样式文件
-    │   │   ├── github-theme.css  # GitHub 风格 Markdown 样式
-    │   │   └── element-overrides.css  # Element Plus 样式覆盖
-    │   ├── axios.ts              # Axios 实例与拦截器配置
-    │   └── main.ts               # 前端入口
-    ├── vite.config.ts            # Vite 配置（含 API 代理）
-    └── package.json
+├── Exchangeapp_frontend/         # Vue 3 前端
+│   ├── src/
+│   │   ├── views/                # 页面组件
+│   │   ├── components/           # 公共组件
+│   │   ├── router/               # Vue Router 配置
+│   │   ├── store/                # Pinia 状态管理
+│   │   ├── types/                # TypeScript 类型定义
+│   │   ├── styles/               # 样式文件
+│   │   │   ├── github-theme.css  # GitHub 风格 Markdown 样式
+│   │   │   └── element-overrides.css  # Element Plus 样式覆盖
+│   │   ├── axios.ts              # Axios 实例与拦截器配置
+│   │   └── main.ts               # 前端入口
+│   ├── Dockerfile                # Docker 构建配置
+│   ├── nginx.conf                # Nginx 反向代理配置
+│   ├── .dockerignore             # Docker 忽略文件
+│   ├── vite.config.ts            # Vite 配置（含 API 代理）
+│   └── package.json
+├── docker-compose.yml           # Docker Compose 开发环境配置
+├── docker-compose.prod.yml      # Docker Compose 生产环境配置
+├── .env.example                 # 环境变量模板
+└── DEPLOY.md                    # Docker 部署指南
 ```
 
 ##  前端页面
@@ -145,8 +171,59 @@ Exchange-Forum/
 | Node.js | 16+ |
 | MySQL | 8.0+ |
 | Redis | 6.0+ |
+| Docker | 20.10+ |
+| Docker Compose | 2.0+ |
 
-### 1. 初始化数据库
+### 方式一：Docker Compose 部署（推荐）
+
+提供了两套 Docker Compose 配置：
+
+| 文件 | 用途 | 特点 |
+|------|------|------|
+| `docker-compose.yml` | 开发环境 | 挂载代码目录，支持热重载 |
+| `docker-compose.prod.yml` | 生产环境 | 资源限制，优化构建 |
+
+1. **复制环境变量配置文件**
+
+```bash
+cp .env.example .env
+# 编辑 .env 填入实际配置值
+```
+
+2. **启动所有服务**
+
+```bash
+# 开发环境
+docker-compose up -d --build
+
+# 生产环境
+docker-compose -f docker-compose.prod.yml up -d --build
+```
+
+3. **验证服务**
+
+- 后端 API：http://localhost:8080/api/exchangerates
+- 前端页面：http://localhost:80
+- 健康检查：http://localhost:8080/health
+
+4. **常用命令**
+
+```bash
+# 开发环境
+docker-compose ps
+docker-compose logs -f backend
+docker-compose restart backend
+docker-compose down
+
+# 生产环境
+docker-compose -f docker-compose.prod.yml ps
+docker-compose -f docker-compose.prod.yml logs -f backend
+docker-compose -f docker-compose.prod.yml down -v
+```
+
+### 方式二：本地开发部署
+
+#### 1. 初始化数据库
 
 创建 MySQL 数据库（GORM 启动时会自动建表）：
 
@@ -154,7 +231,7 @@ Exchange-Forum/
 CREATE DATABASE test CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 ```
 
-### 2. 修改后端配置
+#### 2. 修改后端配置
 
 编辑 `Exchangeapp_backend/config/config.yml`：
 
@@ -175,7 +252,7 @@ jwt:
   Secret: "your-secret-key"  #  生产环境请替换为强随机字符串
 ```
 
-### 3. 启动后端
+#### 3. 启动后端
 
 ```bash
 cd Exchangeapp_backend
@@ -187,7 +264,7 @@ go mod tidy
 go run main.go
 ```
 
-### 4. 启动前端
+#### 4. 启动前端
 
 ```bash
 cd Exchangeapp_frontend
@@ -202,9 +279,27 @@ npm run dev
 npm run build
 ```
 
+##  环境变量
+
+项目支持通过环境变量覆盖配置文件中的默认值：
+
+| 变量名 | 说明 | 默认值 |
+|--------|------|--------|
+| `DATABASE_DSN` | MySQL 连接字符串 | config.yml 中的值 |
+| `REDIS_ADDR` | Redis 地址（格式：host:port） | localhost:6379 |
+| `JWT_SECRET` | JWT 密钥 | config.yml 中的值 |
+| `AI_APIKEY` | OpenAI API Key | 空 |
+| `AI_BASEURL` | OpenAI API 地址 | https://api.openai.com/v1 |
+
 ##  API 文档
 
 所有接口均以 `/api` 为前缀。受保护接口需在请求头中携带 JWT Token：`Authorization: Bearer <token>`
+
+### 系统接口
+
+| 方法 | 路径 | 认证 | 说明 |
+|------|------|------|------|
+| GET | `/health` | 否 | 健康检查接口 |
 
 ### 认证接口（无需登录）
 
@@ -237,18 +332,19 @@ npm run build
 
 ### 文章接口
 
-| 方法 | 路径 | 说明 |
-|------|------|------|
-| GET  | `/api/articles` | 获取文章列表（Redis 缓存 10 分钟） |
-| GET  | `/api/articles/:id` | 获取指定文章详情 |
-| POST | `/api/articles` | 发布新文章（需 AI 审核），同时删除列表缓存 |
+| 方法 | 路径 | 认证 | 说明 |
+|------|------|------|------|
+| GET  | `/api/articles` | 否 | 获取文章列表（Redis 缓存 10 分钟） |
+| GET  | `/api/articles/my` | 是 | 获取当前用户的文章 |
+| GET  | `/api/articles/:id` | 否 | 获取指定文章详情 |
+| POST | `/api/articles` | 是 | 发布新文章（需 AI 审核），同时删除列表缓存 |
 
 ### 点赞接口
 
-| 方法 | 路径 | 说明 |
-|------|------|------|
-| POST | `/api/articles/:id/like` | 点赞文章（Redis INCR 原子操作），返回点赞数 |
-| GET  | `/api/articles/:id/like` | 获取文章点赞数 |
+| 方法 | 路径 | 认证 | 说明 |
+|------|------|------|------|
+| POST | `/api/articles/:id/like` | 是 | 点赞文章（Redis INCR 原子操作），返回点赞数 |
+| GET  | `/api/articles/:id/like` | 是 | 获取文章点赞数 |
 
 **响应示例：**
 ```json
@@ -289,8 +385,13 @@ sqlDB.SetMaxOpenConns(100)  // 最大连接数上限
 
 1. **JWT 密钥**：默认密钥为 `"secret"`，**生产环境必须替换**为高强度随机字符串
 2. **端口**：后端默认运行在 `:8080`，前端开发服务器在 `:5173`，Vite 已配置代理转发 `/api` 请求
-3. **CORS**：当前仅允许 `http://localhost:5173` 跨域，部署时需修改 `router/router.go` 中的 `AllowOrigins`
+3. **CORS**：开发环境仅允许 `http://localhost:5173` 跨域，Docker 部署时通过 nginx 反向代理无需考虑跨域
 4. **自动建表**：应用启动时 GORM 通过 `AutoMigrate` 自动创建/同步数据库表结构，无需手动建表
+5. **Docker 部署**：生产环境推荐使用 `docker-compose up -d --build` 一键部署
+
+##  部署文档
+
+详细部署说明请参考 [DEPLOY.md](DEPLOY.md)。
 
 ##  贡献
 

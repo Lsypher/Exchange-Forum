@@ -1,0 +1,25 @@
+# Git
+.git
+.gitignore
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# Node modules (会重新安装)
+node_modules/
+
+# 构建产物 (会重新构建)
+dist/
+
+# 测试文件
+*.test.*
+*.spec.*
+
+# 其他
+.env
+.env.*
+*.md
+!README.md
