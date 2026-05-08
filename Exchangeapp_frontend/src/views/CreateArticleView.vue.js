@@ -14,6 +14,7 @@ const categories = ['市场分析', '投资策略', '货币动态', '宏观经�
 const form = reactive({
     title: '',
     preview: '',
+    autoGeneratePreview: true,
     content: '',
     category: '',
     tags: '',
@@ -23,9 +24,7 @@ const rules = {
         { required: true, message: '请输入文章标题', trigger: 'blur' },
         { min: 5, max: 100, message: '标题长度在 5 到 100 个字符', trigger: 'blur' },
     ],
-    preview: [
-        { required: true, message: '请输入文章摘要', trigger: 'blur' },
-    ],
+    preview: [],
     content: [
         { required: true, message: '请输入文章内容', trigger: 'blur' },
         { min: 20, message: '内容至少需要 20 个字符', trigger: 'blur' },
@@ -80,13 +79,18 @@ const publishArticle = async () => {
     }
     try {
         publishing.value = true;
-        await axios.post('/articles', {
+        // 构建请求数据
+        const articleData = {
             title: form.title,
-            preview: form.preview,
             content: form.content,
             category: form.category,
             tags: form.tags,
-        });
+        };
+        // 如果不自动生成预览，则添加预览内容
+        if (!form.autoGeneratePreview && form.preview) {
+            articleData.preview = form.preview;
+        }
+        await axios.post('/articles', articleData);
         ElMessage.success('文章发布成功！');
         localStorage.removeItem('article_draft');
         router.push({ name: 'News' });
@@ -278,21 +282,38 @@ function __VLS_template() {
     const __VLS_67 = __VLS_asFunctionalComponent(__VLS_66, new __VLS_66({ label: ("文章摘要"), prop: ("preview"), }));
     const __VLS_68 = __VLS_67({ label: ("文章摘要"), prop: ("preview"), }, ...__VLS_functionalComponentArgsRest(__VLS_67));
     ({}({ label: ("文章摘要"), prop: ("preview"), }));
+    __VLS_elementAsFunction(__VLS_intrinsicElements.div, __VLS_intrinsicElements.div)({ ...{ class: ("preview-input-wrapper") }, });
     const __VLS_72 = {}.ElInput;
     ({}.ElInput);
     __VLS_components.ElInput;
     __VLS_components.elInput;
     // @ts-ignore
     [ElInput,];
-    const __VLS_73 = __VLS_asFunctionalComponent(__VLS_72, new __VLS_72({ modelValue: ((__VLS_ctx.form.preview)), type: ("textarea"), rows: ((3)), placeholder: ("简要描述文章内容..."), maxlength: ("200"), showWordLimit: (true), }));
-    const __VLS_74 = __VLS_73({ modelValue: ((__VLS_ctx.form.preview)), type: ("textarea"), rows: ((3)), placeholder: ("简要描述文章内容..."), maxlength: ("200"), showWordLimit: (true), }, ...__VLS_functionalComponentArgsRest(__VLS_73));
-    ({}({ modelValue: ((__VLS_ctx.form.preview)), type: ("textarea"), rows: ((3)), placeholder: ("简要描述文章内容..."), maxlength: ("200"), showWordLimit: (true), }));
+    const __VLS_73 = __VLS_asFunctionalComponent(__VLS_72, new __VLS_72({ modelValue: ((__VLS_ctx.form.preview)), type: ("textarea"), rows: ((3)), placeholder: ((__VLS_ctx.form.autoGeneratePreview ? 'AI将自动生成摘要...' : '简要描述文章内容...')), maxlength: ("200"), showWordLimit: (true), disabled: ((__VLS_ctx.form.autoGeneratePreview)), }));
+    const __VLS_74 = __VLS_73({ modelValue: ((__VLS_ctx.form.preview)), type: ("textarea"), rows: ((3)), placeholder: ((__VLS_ctx.form.autoGeneratePreview ? 'AI将自动生成摘要...' : '简要描述文章内容...')), maxlength: ("200"), showWordLimit: (true), disabled: ((__VLS_ctx.form.autoGeneratePreview)), }, ...__VLS_functionalComponentArgsRest(__VLS_73));
+    ({}({ modelValue: ((__VLS_ctx.form.preview)), type: ("textarea"), rows: ((3)), placeholder: ((__VLS_ctx.form.autoGeneratePreview ? 'AI将自动生成摘要...' : '简要描述文章内容...')), maxlength: ("200"), showWordLimit: (true), disabled: ((__VLS_ctx.form.autoGeneratePreview)), }));
+    // @ts-ignore
+    [form, form, form,];
+    const __VLS_77 = __VLS_pickFunctionalComponentCtx(__VLS_72, __VLS_74);
+    const __VLS_78 = {}.ElCheckbox;
+    ({}.ElCheckbox);
+    ({}.ElCheckbox);
+    __VLS_components.ElCheckbox;
+    __VLS_components.elCheckbox;
+    __VLS_components.ElCheckbox;
+    __VLS_components.elCheckbox;
+    // @ts-ignore
+    [ElCheckbox, ElCheckbox,];
+    const __VLS_79 = __VLS_asFunctionalComponent(__VLS_78, new __VLS_78({ modelValue: ((__VLS_ctx.form.autoGeneratePreview)), ...{ class: ("auto-generate-checkbox") }, }));
+    const __VLS_80 = __VLS_79({ modelValue: ((__VLS_ctx.form.autoGeneratePreview)), ...{ class: ("auto-generate-checkbox") }, }, ...__VLS_functionalComponentArgsRest(__VLS_79));
+    ({}({ modelValue: ((__VLS_ctx.form.autoGeneratePreview)), ...{ class: ("auto-generate-checkbox") }, }));
     // @ts-ignore
     [form,];
-    const __VLS_77 = __VLS_pickFunctionalComponentCtx(__VLS_72, __VLS_74);
+    (__VLS_83.slots).default;
+    const __VLS_83 = __VLS_pickFunctionalComponentCtx(__VLS_78, __VLS_80);
     (__VLS_71.slots).default;
     const __VLS_71 = __VLS_pickFunctionalComponentCtx(__VLS_66, __VLS_68);
-    const __VLS_78 = {}.ElFormItem;
+    const __VLS_84 = {}.ElFormItem;
     ({}.ElFormItem);
     ({}.ElFormItem);
     __VLS_components.ElFormItem;
@@ -301,8 +322,8 @@ function __VLS_template() {
     __VLS_components.elFormItem;
     // @ts-ignore
     [ElFormItem, ElFormItem,];
-    const __VLS_79 = __VLS_asFunctionalComponent(__VLS_78, new __VLS_78({ label: ("文章内容"), prop: ("content"), }));
-    const __VLS_80 = __VLS_79({ label: ("文章内容"), prop: ("content"), }, ...__VLS_functionalComponentArgsRest(__VLS_79));
+    const __VLS_85 = __VLS_asFunctionalComponent(__VLS_84, new __VLS_84({ label: ("文章内容"), prop: ("content"), }));
+    const __VLS_86 = __VLS_85({ label: ("文章内容"), prop: ("content"), }, ...__VLS_functionalComponentArgsRest(__VLS_85));
     ({}({ label: ("文章内容"), prop: ("content"), }));
     __VLS_elementAsFunction(__VLS_intrinsicElements.div, __VLS_intrinsicElements.div)({ ...{ class: ("editor-wrapper") }, });
     __VLS_elementAsFunction(__VLS_intrinsicElements.div, __VLS_intrinsicElements.div)({ ...{ class: ("editor-toolbar") }, });
@@ -328,7 +349,7 @@ function __VLS_template() {
                 // @ts-ignore
                 [insertFormat,];
             } }, type: ("button"), ...{ class: ("toolbar-btn") }, title: ("链接"), });
-    const __VLS_84 = {}.ElIcon;
+    const __VLS_90 = {}.ElIcon;
     ({}.ElIcon);
     ({}.ElIcon);
     __VLS_components.ElIcon;
@@ -337,26 +358,26 @@ function __VLS_template() {
     __VLS_components.elIcon;
     // @ts-ignore
     [ElIcon, ElIcon,];
-    const __VLS_85 = __VLS_asFunctionalComponent(__VLS_84, new __VLS_84({}));
-    const __VLS_86 = __VLS_85({}, ...__VLS_functionalComponentArgsRest(__VLS_85));
+    const __VLS_91 = __VLS_asFunctionalComponent(__VLS_90, new __VLS_90({}));
+    const __VLS_92 = __VLS_91({}, ...__VLS_functionalComponentArgsRest(__VLS_91));
     ({}({}));
-    const __VLS_90 = {}.Link;
+    const __VLS_96 = {}.Link;
     ({}.Link);
     __VLS_components.Link;
     // @ts-ignore
     [Link,];
-    const __VLS_91 = __VLS_asFunctionalComponent(__VLS_90, new __VLS_90({}));
-    const __VLS_92 = __VLS_91({}, ...__VLS_functionalComponentArgsRest(__VLS_91));
+    const __VLS_97 = __VLS_asFunctionalComponent(__VLS_96, new __VLS_96({}));
+    const __VLS_98 = __VLS_97({}, ...__VLS_functionalComponentArgsRest(__VLS_97));
     ({}({}));
+    const __VLS_101 = __VLS_pickFunctionalComponentCtx(__VLS_96, __VLS_98);
+    (__VLS_95.slots).default;
     const __VLS_95 = __VLS_pickFunctionalComponentCtx(__VLS_90, __VLS_92);
-    (__VLS_89.slots).default;
-    const __VLS_89 = __VLS_pickFunctionalComponentCtx(__VLS_84, __VLS_86);
     __VLS_elementAsFunction(__VLS_intrinsicElements.button, __VLS_intrinsicElements.button)({ ...{ onClick: (...[$event]) => {
                 __VLS_ctx.insertFormat('\n> ', '');
                 // @ts-ignore
                 [insertFormat,];
             } }, type: ("button"), ...{ class: ("toolbar-btn") }, title: ("引用"), });
-    const __VLS_96 = {}.ElIcon;
+    const __VLS_102 = {}.ElIcon;
     ({}.ElIcon);
     ({}.ElIcon);
     __VLS_components.ElIcon;
@@ -365,26 +386,26 @@ function __VLS_template() {
     __VLS_components.elIcon;
     // @ts-ignore
     [ElIcon, ElIcon,];
-    const __VLS_97 = __VLS_asFunctionalComponent(__VLS_96, new __VLS_96({}));
-    const __VLS_98 = __VLS_97({}, ...__VLS_functionalComponentArgsRest(__VLS_97));
+    const __VLS_103 = __VLS_asFunctionalComponent(__VLS_102, new __VLS_102({}));
+    const __VLS_104 = __VLS_103({}, ...__VLS_functionalComponentArgsRest(__VLS_103));
     ({}({}));
-    const __VLS_102 = {}.ChatLineSquare;
+    const __VLS_108 = {}.ChatLineSquare;
     ({}.ChatLineSquare);
     __VLS_components.ChatLineSquare;
     // @ts-ignore
     [ChatLineSquare,];
-    const __VLS_103 = __VLS_asFunctionalComponent(__VLS_102, new __VLS_102({}));
-    const __VLS_104 = __VLS_103({}, ...__VLS_functionalComponentArgsRest(__VLS_103));
+    const __VLS_109 = __VLS_asFunctionalComponent(__VLS_108, new __VLS_108({}));
+    const __VLS_110 = __VLS_109({}, ...__VLS_functionalComponentArgsRest(__VLS_109));
     ({}({}));
+    const __VLS_113 = __VLS_pickFunctionalComponentCtx(__VLS_108, __VLS_110);
+    (__VLS_107.slots).default;
     const __VLS_107 = __VLS_pickFunctionalComponentCtx(__VLS_102, __VLS_104);
-    (__VLS_101.slots).default;
-    const __VLS_101 = __VLS_pickFunctionalComponentCtx(__VLS_96, __VLS_98);
     __VLS_elementAsFunction(__VLS_intrinsicElements.button, __VLS_intrinsicElements.button)({ ...{ onClick: (...[$event]) => {
                 __VLS_ctx.insertFormat('\n- ', '');
                 // @ts-ignore
                 [insertFormat,];
             } }, type: ("button"), ...{ class: ("toolbar-btn") }, title: ("列表"), });
-    const __VLS_108 = {}.ElIcon;
+    const __VLS_114 = {}.ElIcon;
     ({}.ElIcon);
     ({}.ElIcon);
     __VLS_components.ElIcon;
@@ -393,26 +414,26 @@ function __VLS_template() {
     __VLS_components.elIcon;
     // @ts-ignore
     [ElIcon, ElIcon,];
-    const __VLS_109 = __VLS_asFunctionalComponent(__VLS_108, new __VLS_108({}));
-    const __VLS_110 = __VLS_109({}, ...__VLS_functionalComponentArgsRest(__VLS_109));
+    const __VLS_115 = __VLS_asFunctionalComponent(__VLS_114, new __VLS_114({}));
+    const __VLS_116 = __VLS_115({}, ...__VLS_functionalComponentArgsRest(__VLS_115));
     ({}({}));
-    const __VLS_114 = {}.List;
+    const __VLS_120 = {}.List;
     ({}.List);
     __VLS_components.List;
     // @ts-ignore
     [List,];
-    const __VLS_115 = __VLS_asFunctionalComponent(__VLS_114, new __VLS_114({}));
-    const __VLS_116 = __VLS_115({}, ...__VLS_functionalComponentArgsRest(__VLS_115));
+    const __VLS_121 = __VLS_asFunctionalComponent(__VLS_120, new __VLS_120({}));
+    const __VLS_122 = __VLS_121({}, ...__VLS_functionalComponentArgsRest(__VLS_121));
     ({}({}));
+    const __VLS_125 = __VLS_pickFunctionalComponentCtx(__VLS_120, __VLS_122);
+    (__VLS_119.slots).default;
     const __VLS_119 = __VLS_pickFunctionalComponentCtx(__VLS_114, __VLS_116);
-    (__VLS_113.slots).default;
-    const __VLS_113 = __VLS_pickFunctionalComponentCtx(__VLS_108, __VLS_110);
     __VLS_elementAsFunction(__VLS_intrinsicElements.button, __VLS_intrinsicElements.button)({ ...{ onClick: (...[$event]) => {
                 __VLS_ctx.insertFormat('\n```\n', '\n```');
                 // @ts-ignore
                 [insertFormat,];
             } }, type: ("button"), ...{ class: ("toolbar-btn") }, title: ("代码"), });
-    const __VLS_120 = {}.ElIcon;
+    const __VLS_126 = {}.ElIcon;
     ({}.ElIcon);
     ({}.ElIcon);
     __VLS_components.ElIcon;
@@ -421,36 +442,36 @@ function __VLS_template() {
     __VLS_components.elIcon;
     // @ts-ignore
     [ElIcon, ElIcon,];
-    const __VLS_121 = __VLS_asFunctionalComponent(__VLS_120, new __VLS_120({}));
-    const __VLS_122 = __VLS_121({}, ...__VLS_functionalComponentArgsRest(__VLS_121));
+    const __VLS_127 = __VLS_asFunctionalComponent(__VLS_126, new __VLS_126({}));
+    const __VLS_128 = __VLS_127({}, ...__VLS_functionalComponentArgsRest(__VLS_127));
     ({}({}));
-    const __VLS_126 = {}.Monitor;
+    const __VLS_132 = {}.Monitor;
     ({}.Monitor);
     __VLS_components.Monitor;
     // @ts-ignore
     [Monitor,];
-    const __VLS_127 = __VLS_asFunctionalComponent(__VLS_126, new __VLS_126({}));
-    const __VLS_128 = __VLS_127({}, ...__VLS_functionalComponentArgsRest(__VLS_127));
+    const __VLS_133 = __VLS_asFunctionalComponent(__VLS_132, new __VLS_132({}));
+    const __VLS_134 = __VLS_133({}, ...__VLS_functionalComponentArgsRest(__VLS_133));
     ({}({}));
+    const __VLS_137 = __VLS_pickFunctionalComponentCtx(__VLS_132, __VLS_134);
+    (__VLS_131.slots).default;
     const __VLS_131 = __VLS_pickFunctionalComponentCtx(__VLS_126, __VLS_128);
-    (__VLS_125.slots).default;
-    const __VLS_125 = __VLS_pickFunctionalComponentCtx(__VLS_120, __VLS_122);
-    const __VLS_132 = {}.ElInput;
+    const __VLS_138 = {}.ElInput;
     ({}.ElInput);
     __VLS_components.ElInput;
     __VLS_components.elInput;
     // @ts-ignore
     [ElInput,];
-    const __VLS_133 = __VLS_asFunctionalComponent(__VLS_132, new __VLS_132({ ref: ("contentRef"), modelValue: ((__VLS_ctx.form.content)), type: ("textarea"), rows: ((15)), placeholder: ("\u5728\u8fd9\u91cc\u64b0\u5199\u60a8\u7684\u6587\u7ae0\u5185\u5bb9\u002e\u002e\u002e\u000d\u000a\u652f\u6301\u0020\u004d\u0061\u0072\u006b\u0064\u006f\u0077\u006e\u0020\u8bed\u6cd5\u683c\u5f0f"), ...{ class: ("content-editor") }, }));
-    const __VLS_134 = __VLS_133({ ref: ("contentRef"), modelValue: ((__VLS_ctx.form.content)), type: ("textarea"), rows: ((15)), placeholder: ("\u5728\u8fd9\u91cc\u64b0\u5199\u60a8\u7684\u6587\u7ae0\u5185\u5bb9\u002e\u002e\u002e\u000d\u000a\u652f\u6301\u0020\u004d\u0061\u0072\u006b\u0064\u006f\u0077\u006e\u0020\u8bed\u6cd5\u683c\u5f0f"), ...{ class: ("content-editor") }, }, ...__VLS_functionalComponentArgsRest(__VLS_133));
+    const __VLS_139 = __VLS_asFunctionalComponent(__VLS_138, new __VLS_138({ ref: ("contentRef"), modelValue: ((__VLS_ctx.form.content)), type: ("textarea"), rows: ((15)), placeholder: ("\u5728\u8fd9\u91cc\u64b0\u5199\u60a8\u7684\u6587\u7ae0\u5185\u5bb9\u002e\u002e\u002e\u000d\u000a\u652f\u6301\u0020\u004d\u0061\u0072\u006b\u0064\u006f\u0077\u006e\u0020\u8bed\u6cd5\u683c\u5f0f"), ...{ class: ("content-editor") }, }));
+    const __VLS_140 = __VLS_139({ ref: ("contentRef"), modelValue: ((__VLS_ctx.form.content)), type: ("textarea"), rows: ((15)), placeholder: ("\u5728\u8fd9\u91cc\u64b0\u5199\u60a8\u7684\u6587\u7ae0\u5185\u5bb9\u002e\u002e\u002e\u000d\u000a\u652f\u6301\u0020\u004d\u0061\u0072\u006b\u0064\u006f\u0077\u006e\u0020\u8bed\u6cd5\u683c\u5f0f"), ...{ class: ("content-editor") }, }, ...__VLS_functionalComponentArgsRest(__VLS_139));
     ({}({ ref: ("contentRef"), modelValue: ((__VLS_ctx.form.content)), type: ("textarea"), rows: ((15)), placeholder: ("\u5728\u8fd9\u91cc\u64b0\u5199\u60a8\u7684\u6587\u7ae0\u5185\u5bb9\u002e\u002e\u002e\u000d\u000a\u652f\u6301\u0020\u004d\u0061\u0072\u006b\u0064\u006f\u0077\u006e\u0020\u8bed\u6cd5\u683c\u5f0f"), ...{ class: ("content-editor") }, }));
     // @ts-ignore
     (__VLS_ctx.contentRef);
     // @ts-ignore
     [form, contentRef,];
-    const __VLS_137 = __VLS_pickFunctionalComponentCtx(__VLS_132, __VLS_134);
+    const __VLS_143 = __VLS_pickFunctionalComponentCtx(__VLS_138, __VLS_140);
     __VLS_elementAsFunction(__VLS_intrinsicElements.div, __VLS_intrinsicElements.div)({ ...{ class: ("editor-hint") }, });
-    const __VLS_138 = {}.ElIcon;
+    const __VLS_144 = {}.ElIcon;
     ({}.ElIcon);
     ({}.ElIcon);
     __VLS_components.ElIcon;
@@ -459,25 +480,25 @@ function __VLS_template() {
     __VLS_components.elIcon;
     // @ts-ignore
     [ElIcon, ElIcon,];
-    const __VLS_139 = __VLS_asFunctionalComponent(__VLS_138, new __VLS_138({}));
-    const __VLS_140 = __VLS_139({}, ...__VLS_functionalComponentArgsRest(__VLS_139));
+    const __VLS_145 = __VLS_asFunctionalComponent(__VLS_144, new __VLS_144({}));
+    const __VLS_146 = __VLS_145({}, ...__VLS_functionalComponentArgsRest(__VLS_145));
     ({}({}));
-    const __VLS_144 = {}.InfoFilled;
+    const __VLS_150 = {}.InfoFilled;
     ({}.InfoFilled);
     __VLS_components.InfoFilled;
     // @ts-ignore
     [InfoFilled,];
-    const __VLS_145 = __VLS_asFunctionalComponent(__VLS_144, new __VLS_144({}));
-    const __VLS_146 = __VLS_145({}, ...__VLS_functionalComponentArgsRest(__VLS_145));
+    const __VLS_151 = __VLS_asFunctionalComponent(__VLS_150, new __VLS_150({}));
+    const __VLS_152 = __VLS_151({}, ...__VLS_functionalComponentArgsRest(__VLS_151));
     ({}({}));
+    const __VLS_155 = __VLS_pickFunctionalComponentCtx(__VLS_150, __VLS_152);
+    (__VLS_149.slots).default;
     const __VLS_149 = __VLS_pickFunctionalComponentCtx(__VLS_144, __VLS_146);
-    (__VLS_143.slots).default;
-    const __VLS_143 = __VLS_pickFunctionalComponentCtx(__VLS_138, __VLS_140);
     __VLS_elementAsFunction(__VLS_intrinsicElements.span, __VLS_intrinsicElements.span)({});
-    (__VLS_83.slots).default;
-    const __VLS_83 = __VLS_pickFunctionalComponentCtx(__VLS_78, __VLS_80);
+    (__VLS_89.slots).default;
+    const __VLS_89 = __VLS_pickFunctionalComponentCtx(__VLS_84, __VLS_86);
     __VLS_elementAsFunction(__VLS_intrinsicElements.div, __VLS_intrinsicElements.div)({ ...{ class: ("form-actions") }, });
-    const __VLS_150 = {}.ElButton;
+    const __VLS_156 = {}.ElButton;
     ({}.ElButton);
     ({}.ElButton);
     __VLS_components.ElButton;
@@ -486,20 +507,20 @@ function __VLS_template() {
     __VLS_components.elButton;
     // @ts-ignore
     [ElButton, ElButton,];
-    const __VLS_151 = __VLS_asFunctionalComponent(__VLS_150, new __VLS_150({ ...{ 'onClick': {} }, loading: ((__VLS_ctx.savingDraft)), size: ("large"), ...{ class: ("draft-btn") }, }));
-    const __VLS_152 = __VLS_151({ ...{ 'onClick': {} }, loading: ((__VLS_ctx.savingDraft)), size: ("large"), ...{ class: ("draft-btn") }, }, ...__VLS_functionalComponentArgsRest(__VLS_151));
+    const __VLS_157 = __VLS_asFunctionalComponent(__VLS_156, new __VLS_156({ ...{ 'onClick': {} }, loading: ((__VLS_ctx.savingDraft)), size: ("large"), ...{ class: ("draft-btn") }, }));
+    const __VLS_158 = __VLS_157({ ...{ 'onClick': {} }, loading: ((__VLS_ctx.savingDraft)), size: ("large"), ...{ class: ("draft-btn") }, }, ...__VLS_functionalComponentArgsRest(__VLS_157));
     ({}({ ...{ 'onClick': {} }, loading: ((__VLS_ctx.savingDraft)), size: ("large"), ...{ class: ("draft-btn") }, }));
-    let __VLS_156;
-    const __VLS_157 = {
+    let __VLS_162;
+    const __VLS_163 = {
         onClick: (__VLS_ctx.saveDraft)
     };
     // @ts-ignore
     [savingDraft, saveDraft,];
-    (__VLS_155.slots).default;
-    const __VLS_155 = __VLS_pickFunctionalComponentCtx(__VLS_150, __VLS_152);
-    let __VLS_153;
-    let __VLS_154;
-    const __VLS_158 = {}.ElButton;
+    (__VLS_161.slots).default;
+    const __VLS_161 = __VLS_pickFunctionalComponentCtx(__VLS_156, __VLS_158);
+    let __VLS_159;
+    let __VLS_160;
+    const __VLS_164 = {}.ElButton;
     ({}.ElButton);
     ({}.ElButton);
     __VLS_components.ElButton;
@@ -508,15 +529,15 @@ function __VLS_template() {
     __VLS_components.elButton;
     // @ts-ignore
     [ElButton, ElButton,];
-    const __VLS_159 = __VLS_asFunctionalComponent(__VLS_158, new __VLS_158({ ...{ 'onClick': {} }, type: ("primary"), loading: ((__VLS_ctx.publishing)), size: ("large"), ...{ class: ("publish-btn") }, disabled: ((!__VLS_ctx.form.title || !__VLS_ctx.form.content)), }));
-    const __VLS_160 = __VLS_159({ ...{ 'onClick': {} }, type: ("primary"), loading: ((__VLS_ctx.publishing)), size: ("large"), ...{ class: ("publish-btn") }, disabled: ((!__VLS_ctx.form.title || !__VLS_ctx.form.content)), }, ...__VLS_functionalComponentArgsRest(__VLS_159));
+    const __VLS_165 = __VLS_asFunctionalComponent(__VLS_164, new __VLS_164({ ...{ 'onClick': {} }, type: ("primary"), loading: ((__VLS_ctx.publishing)), size: ("large"), ...{ class: ("publish-btn") }, disabled: ((!__VLS_ctx.form.title || !__VLS_ctx.form.content)), }));
+    const __VLS_166 = __VLS_165({ ...{ 'onClick': {} }, type: ("primary"), loading: ((__VLS_ctx.publishing)), size: ("large"), ...{ class: ("publish-btn") }, disabled: ((!__VLS_ctx.form.title || !__VLS_ctx.form.content)), }, ...__VLS_functionalComponentArgsRest(__VLS_165));
     ({}({ ...{ 'onClick': {} }, type: ("primary"), loading: ((__VLS_ctx.publishing)), size: ("large"), ...{ class: ("publish-btn") }, disabled: ((!__VLS_ctx.form.title || !__VLS_ctx.form.content)), }));
-    let __VLS_164;
-    const __VLS_165 = {
+    let __VLS_170;
+    const __VLS_171 = {
         onClick: (__VLS_ctx.publishArticle)
     };
     if (!__VLS_ctx.publishing) {
-        const __VLS_166 = {}.ElIcon;
+        const __VLS_172 = {}.ElIcon;
         ({}.ElIcon);
         ({}.ElIcon);
         __VLS_components.ElIcon;
@@ -525,31 +546,31 @@ function __VLS_template() {
         __VLS_components.elIcon;
         // @ts-ignore
         [ElIcon, ElIcon,];
-        const __VLS_167 = __VLS_asFunctionalComponent(__VLS_166, new __VLS_166({}));
-        const __VLS_168 = __VLS_167({}, ...__VLS_functionalComponentArgsRest(__VLS_167));
+        const __VLS_173 = __VLS_asFunctionalComponent(__VLS_172, new __VLS_172({}));
+        const __VLS_174 = __VLS_173({}, ...__VLS_functionalComponentArgsRest(__VLS_173));
         ({}({}));
-        const __VLS_172 = {}.Upload;
+        const __VLS_178 = {}.Upload;
         ({}.Upload);
         __VLS_components.Upload;
         // @ts-ignore
         [Upload,];
-        const __VLS_173 = __VLS_asFunctionalComponent(__VLS_172, new __VLS_172({}));
-        const __VLS_174 = __VLS_173({}, ...__VLS_functionalComponentArgsRest(__VLS_173));
+        const __VLS_179 = __VLS_asFunctionalComponent(__VLS_178, new __VLS_178({}));
+        const __VLS_180 = __VLS_179({}, ...__VLS_functionalComponentArgsRest(__VLS_179));
         ({}({}));
         // @ts-ignore
         [form, form, publishing, publishing, publishArticle,];
+        const __VLS_183 = __VLS_pickFunctionalComponentCtx(__VLS_178, __VLS_180);
+        (__VLS_177.slots).default;
         const __VLS_177 = __VLS_pickFunctionalComponentCtx(__VLS_172, __VLS_174);
-        (__VLS_171.slots).default;
-        const __VLS_171 = __VLS_pickFunctionalComponentCtx(__VLS_166, __VLS_168);
     }
     __VLS_elementAsFunction(__VLS_intrinsicElements.span, __VLS_intrinsicElements.span)({});
     (__VLS_ctx.publishing ? '发布中...' : '发布文章');
     // @ts-ignore
     [publishing,];
-    (__VLS_163.slots).default;
-    const __VLS_163 = __VLS_pickFunctionalComponentCtx(__VLS_158, __VLS_160);
-    let __VLS_161;
-    let __VLS_162;
+    (__VLS_169.slots).default;
+    const __VLS_169 = __VLS_pickFunctionalComponentCtx(__VLS_164, __VLS_166);
+    let __VLS_167;
+    let __VLS_168;
     (__VLS_23.slots).default;
     const __VLS_23 = __VLS_pickFunctionalComponentCtx(__VLS_18, __VLS_20);
     __VLS_elementAsFunction(__VLS_intrinsicElements.div, __VLS_intrinsicElements.div)({ ...{ class: ("tips-card") }, });
@@ -575,6 +596,8 @@ function __VLS_template() {
         __VLS_styleScopedClasses['category-select'];
         __VLS_styleScopedClasses['form-col'];
         __VLS_styleScopedClasses['tags-input'];
+        __VLS_styleScopedClasses['preview-input-wrapper'];
+        __VLS_styleScopedClasses['auto-generate-checkbox'];
         __VLS_styleScopedClasses['editor-wrapper'];
         __VLS_styleScopedClasses['editor-toolbar'];
         __VLS_styleScopedClasses['toolbar-btn'];

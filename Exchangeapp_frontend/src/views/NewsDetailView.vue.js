@@ -1,3 +1,4 @@
+/* __placeholder__ */
 import { ref, onMounted, computed } from "vue";
 import { useRoute } from "vue-router";
 import axios from "../axios";
@@ -245,7 +246,7 @@ function __VLS_template() {
         __VLS_elementAsFunction(__VLS_intrinsicElements.header, __VLS_intrinsicElements.header)({ ...{ class: ("article-header") }, });
         __VLS_elementAsFunction(__VLS_intrinsicElements.div, __VLS_intrinsicElements.div)({ ...{ class: ("article-meta") }, });
         __VLS_elementAsFunction(__VLS_intrinsicElements.span, __VLS_intrinsicElements.span)({ ...{ class: ("article-date") }, });
-        (__VLS_ctx.formatDate(__VLS_ctx.article.CreatedAt));
+        (__VLS_ctx.formatDate(__VLS_ctx.article.CreatedAt || ''));
         // @ts-ignore
         [article, article, formatDate,];
         if (__VLS_ctx.article.category) {

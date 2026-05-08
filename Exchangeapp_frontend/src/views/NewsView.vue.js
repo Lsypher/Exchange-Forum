@@ -1,3 +1,4 @@
+/* __placeholder__ */
 import { ref, computed, onMounted } from 'vue';
 import { useRouter } from 'vue-router';
 import { ElMessage } from 'element-plus';
@@ -37,7 +38,7 @@ const fetchArticles = async () => {
     }
 };
 const viewDetail = (id) => {
-    router.push({ name: 'NewsDetail', params: { id } });
+    router.push({ name: 'NewsDetail', params: { id: String(id) } });
 };
 const formatDate = (dateString) => {
     const date = new Date(dateString);
@@ -229,7 +230,7 @@ function __VLS_template() {
             __VLS_elementAsFunction(__VLS_intrinsicElements.div, __VLS_intrinsicElements.div)({ ...{ class: ("article-header") }, });
             __VLS_elementAsFunction(__VLS_intrinsicElements.div, __VLS_intrinsicElements.div)({ ...{ class: ("article-meta") }, });
             __VLS_elementAsFunction(__VLS_intrinsicElements.span, __VLS_intrinsicElements.span)({ ...{ class: ("article-date") }, });
-            (__VLS_ctx.formatDate(article.CreatedAt));
+            (__VLS_ctx.formatDate(article.CreatedAt || ''));
             // @ts-ignore
             [filteredArticles, formatDate,];
             if (article.category) {
