@@ -18,3 +18,9 @@ ai:
   APIKey: ""
   Model: "gpt-3.5-turbo"
   Timeout: 30
+
+exchange_rate:
+  Enabled: true
+  FetchInterval: 3600
+  BaseCurrency: "EUR"
+  Timeout: 30

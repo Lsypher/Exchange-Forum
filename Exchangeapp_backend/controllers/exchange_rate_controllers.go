@@ -3,6 +3,7 @@ package controllers
 import (
 	"errors"
 	"exchangeapp/global"
+	"exchangeapp/jobs"
 	"exchangeapp/models"
 	"log"
 	"net/http"
@@ -98,4 +99,15 @@ func GetCurrencies(ctx *gin.Context) {
 	}
 
 	ctx.JSON(http.StatusOK, currencies)
+}
+
+// 手动刷新汇率函数，触发定时任务立即执行一次汇率更新
+func RefreshExchangeRates(ctx *gin.Context) {
+	job := jobs.NewExchangeRateJob()
+	if err := job.RunOnce(); err != nil {
+		log.Printf("手动刷新汇率失败: %v", err)
+		ctx.JSON(http.StatusInternalServerError, gin.H{"error": "刷新汇率失败: " + err.Error()})
+		return
+	}
+	ctx.JSON(http.StatusOK, gin.H{"message": "汇率刷新成功"})
 }

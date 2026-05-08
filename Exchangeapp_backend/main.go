@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"exchangeapp/config"
+	"exchangeapp/jobs"
 	"exchangeapp/router"
 	"log"
 	"net/http"
@@ -17,6 +18,13 @@ func main() {
 	config.InitDB()
 
 	config.InitRedis()
+
+	// 启动汇率定时任务
+	if config.AppConfig.ExchangeRate.Enabled {
+		job := jobs.NewExchangeRateJob()
+		job.Start()
+		defer job.Stop()
+	}
 
 	r := router.SetupRouter()
 

@@ -45,7 +45,7 @@ func SetupRouter() *gin.Engine {
 	// 使用 AuthMiddleware 中间件，使得以下的 API 路径的具体 HTTP 请求需要进行身份验证才能访问
 	api.Use(middlewares.AuthMiddleware())
 	{
-		api.POST("/exchangerates", controllers.CreateExchangeRate)
+		api.POST("/exchangerates/refresh", controllers.RefreshExchangeRates)
 
 		api.POST("/articles", controllers.CreateArticle)
 		api.GET("/articles", controllers.GetArticles)

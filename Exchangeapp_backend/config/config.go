@@ -35,6 +35,13 @@ type Config struct {
 		Model   string
 		Timeout int
 	}
+	// 汇率配置
+	ExchangeRate struct {
+		Enabled       bool
+		FetchInterval int // 更新间隔（秒），默认 3600（1小时）
+		BaseCurrency  string
+		Timeout       int
+	}
 }
 
 // 定义一个全局变量，类型是指向 Config 结构体的指针

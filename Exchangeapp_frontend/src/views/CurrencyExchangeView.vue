@@ -6,9 +6,9 @@
           <h1 class="page-title">货币兑换</h1>
           <p class="page-description">实时汇率换算，支持全球主要货币</p>
         </div>
-        <el-button type="primary" @click="openCreateDialog" class="add-rate-btn">
-          <el-icon><Plus /></el-icon>
-          添加汇率
+        <el-button type="primary" @click="refreshRates" class="refresh-btn" :loading="refreshLoading">
+          <el-icon><Refresh /></el-icon>
+          刷新汇率
         </el-button>
       </div>
 
@@ -99,7 +99,7 @@
             </div>
             <div class="result-time">
               <el-icon size="14"><Clock /></el-icon>
-              更新时间: {{ currentTime }}
+              汇率更新时间: {{ getLatestUpdateTime() }}
             </div>
           </div>
         </div>
@@ -115,80 +115,12 @@
         </div>
       </div>
     </div>
-
-    <el-dialog
-      v-model="createDialogVisible"
-      title="添加汇率"
-      width="420px"
-      :close-on-click-modal="false"
-      class="create-dialog"
-    >
-      <el-form
-        :model="createForm"
-        :rules="createRules"
-        ref="createFormRef"
-        label-position="top"
-        class="create-form"
-      >
-        <el-form-item label="源货币" prop="fromCurrency">
-          <el-select
-            v-model="createForm.fromCurrency"
-            placeholder="选择源货币"
-            class="currency-select"
-          >
-            <el-option
-              v-for="currency in currencies"
-              :key="currency"
-              :label="currency"
-              :value="currency"
-            />
-          </el-select>
-        </el-form-item>
-
-        <el-form-item label="目标货币" prop="toCurrency">
-          <el-select
-            v-model="createForm.toCurrency"
-            placeholder="选择目标货币"
-            class="currency-select"
-          >
-            <el-option
-              v-for="currency in currencies"
-              :key="currency"
-              :label="currency"
-              :value="currency"
-            />
-          </el-select>
-        </el-form-item>
-
-        <el-form-item label="汇率" prop="rate">
-          <el-input
-            v-model.number="createForm.rate"
-            type="number"
-            placeholder="输入汇率"
-            :min="0"
-          >
-            <template #prefix>
-              <span class="rate-prefix">1 {{ createForm.fromCurrency }} =</span>
-            </template>
-          </el-input>
-        </el-form-item>
-      </el-form>
-
-      <template #footer>
-        <div class="dialog-footer">
-          <el-button @click="createDialogVisible = false">取消</el-button>
-          <el-button type="primary" @click="submitCreate" :loading="createLoading">
-            提交
-          </el-button>
-        </div>
-      </template>
-    </el-dialog>
   </div>
-</template>  
-  
+</template>
+
 <script setup lang="ts">
 import { ref, onMounted, computed } from 'vue';
-import { Sort, Right, Clock, Plus } from '@element-plus/icons-vue';
+import { Sort, Right, Clock, Refresh } from '@element-plus/icons-vue';
 import axios from '../axios';
 import { ElMessage } from 'element-plus';
 
@@ -196,6 +128,7 @@ interface ExchangeRate {
   fromcurrency: string;
   tocurrency: string;
   rate: number;
+  time?: string;
 }
 
 const form = ref({
@@ -210,29 +143,6 @@ const rates = ref<ExchangeRate[]>([]);
 const loading = ref(false);
 const currentRate = ref<number | null>(null);
 const currentTime = ref('');
-
-// 创建汇率相关
-const createDialogVisible = ref(false);
-const createLoading = ref(false);
-const createFormRef = ref();
-const createForm = ref({
-  fromCurrency: '',
-  toCurrency: '',
-  rate: null as number | null,
-});
-
-const createRules = {
-  fromCurrency: [
-    { required: true, message: '请选择源货币', trigger: 'change' },
-  ],
-  toCurrency: [
-    { required: true, message: '请选择目标货币', trigger: 'change' },
-  ],
-  rate: [
-    { required: true, message: '请输入汇率', trigger: 'blur' },
-    { type: 'number', min: 0.0001, message: '汇率必须大于0', trigger: 'blur' },
-  ],
-};
 
 const recentRates = computed(() => {
   if (!rates.value.length) return [];
@@ -323,49 +233,33 @@ const updateCurrentTime = () => {
   currentTime.value = new Date().toLocaleString('zh-CN');
 };
 
-const openCreateDialog = () => {
-  createForm.value = {
-    fromCurrency: '',
-    toCurrency: '',
-    rate: null,
-  };
-  createDialogVisible.value = true;
+const getLatestUpdateTime = () => {
+  if (!rates.value.length) return '-';
+  const latestTime = rates.value
+    .filter(r => r.time)
+    .map(r => r.time)
+    .sort()
+    .reverse()[0];
+  if (!latestTime) return '-';
+  return new Date(latestTime).toLocaleString('zh-CN');
 };
 
-const submitCreate = async () => {
-  if (!createFormRef.value) return;
-
+const refreshLoading = ref(false);
+const refreshRates = async () => {
   try {
-    await createFormRef.value.validate();
-  } catch {
-    return;
-  }
-
-  if (createForm.value.fromCurrency === createForm.value.toCurrency) {
-    ElMessage.warning('源货币和目标货币不能相同');
-    return;
-  }
-
-  try {
-    createLoading.value = true;
-    await axios.post('/exchangerates', {
-      fromcurrency: createForm.value.fromCurrency,
-      tocurrency: createForm.value.toCurrency,
-      rate: createForm.value.rate,
-    });
-    ElMessage.success('汇率创建成功');
-    createDialogVisible.value = false;
-    // 刷新汇率数据
+    refreshLoading.value = true;
+    await axios.post('/exchangerates/refresh');
+    ElMessage.success('汇率刷新成功');
     await fetchCurrencies();
   } catch (error: any) {
-    if (error.response?.data?.message) {
-      ElMessage.error(error.response.data.message);
+    if (error.response?.data?.error) {
+      ElMessage.error(error.response.data.error);
     } else {
-      ElMessage.error('创建汇率失败');
+      ElMessage.error('刷新汇率失败');
     }
-    console.error('Failed to create exchange rate', error);
+    console.error('Failed to refresh exchange rates', error);
   } finally {
-    createLoading.value = false;
+    refreshLoading.value = false;
   }
 };
 
@@ -399,7 +293,7 @@ onMounted(() => {
   text-align: left;
 }
 
-.add-rate-btn {
+.refresh-btn {
   background: linear-gradient(135deg, #c4a77d 0%, #a68b5b 100%);
   border: none;
   border-radius: 10px;
@@ -407,7 +301,7 @@ onMounted(() => {
   padding: 12px 20px;
 }
 
-.add-rate-btn:hover {
+.refresh-btn:hover {
   transform: translateY(-2px);
   box-shadow: 0 6px 20px rgba(166, 139, 91, 0.4);
 }
@@ -645,26 +539,6 @@ onMounted(() => {
   font-size: 20px;
   font-weight: 600;
   color: #2d2a26;
-}
-
-.create-form {
-  padding: 0 8px;
-}
-
-.create-form .el-form-item__label {
-  color: #2d2a26;
-  font-weight: 600;
-}
-
-.rate-prefix {
-  color: #8b7355;
-  font-size: 12px;
-}
-
-.dialog-footer {
-  display: flex;
-  justify-content: flex-end;
-  gap: 12px;
 }
 
 @media (max-width: 768px) {
