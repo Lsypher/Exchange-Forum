@@ -8,24 +8,25 @@
 ![Redis](https://img.shields.io/badge/Redis-6.0+-DC382D?style=flat&logo=redis&logoColor=white)
 ![Vue3](https://img.shields.io/badge/Vue-3.x-42b883?style=flat&logo=vue.js)
 
-##  项目简介
+## 项目简介
 
 **汇流社区**是一个前后端分离的汇率论坛应用。后端使用 Go + Gin 构建 RESTful API，通过 Redis 缓存提升读取性能，使用 JWT 实现无状态身份认证；前端使用 Vue 3 + TypeScript 实现响应式界面，同时适配桌面端和移动端。
 
 ### 核心亮点
 
--  **JWT 无状态认证**：使用 JWT（HMAC-SHA256）+ bcrypt 实现安全的用户注册与登录，Token 有效期 72 小时
--  **Redis 缓存加速**：文章列表采用 Cache Aside 模式缓存（TTL 10 分钟），发布新文章时主动删除旧缓存，保证数据一致性
--  **Redis 缓存穿透保护**：空结果也会缓存，防止缓存击穿
--  **Redis 原子计数**：点赞功能使用 Redis `INCR` 原子操作，天然避免并发写入冲突
--  **GORM 连接池**：配置 MySQL 连接池（最大空闲连接 10，最大连接数 100），启动时自动 `AutoMigrate` 建表
--  **CORS 跨域支持**：通过 `gin-contrib/cors` 中间件配置细粒度跨域策略
--  **Viper 配置管理**：使用 Viper 读取 YAML 配置，支持灵活的环境隔离
--  **优雅停机**：`main.go` 实现 HTTP 服务器优雅关闭，保障服务平滑重启
--  **AI 内容审核**：创建文章时调用 OpenAI API 审核内容（暴力、色情、违法）
--  **Markdown 编辑器**：文章创建支持 Markdown 格式
+- **JWT 无状态认证**：使用 JWT（HMAC-SHA256）+ bcrypt 实现安全的用户注册与登录，Token 有效期 72 小时
+- **Redis 缓存加速**：文章列表采用 Cache Aside 模式缓存（TTL 10 分钟），发布新文章时主动删除旧缓存，保证数据一致性
+- **Redis 缓存穿透保护**：空结果也会缓存，防止缓存击穿
+- **Redis 原子计数**：点赞功能使用 Redis `INCR` 原子操作，天然避免并发写入冲突
+- **GORM 连接池**：配置 MySQL 连接池（最大空闲连接 10，最大连接数 100），启动时自动 `AutoMigrate` 建表
+- **CORS 跨域支持**：通过 `gin-contrib/cors` 中间件配置细粒度跨域策略
+- **Viper 配置管理**：使用 Viper 读取 YAML 配置，支持灵活的环境隔离
+- **优雅停机**：`main.go` 实现 HTTP 服务器优雅关闭，保障服务平滑重启
+- **AI 内容审核**：创建文章时调用 OpenAI API 审核内容（暴力、色情、违法）
+- **Markdown 编辑器**：文章创建支持 Markdown 格式
+- **实时汇率自动获取**：后台定时任务从 Frankfurter API 获取汇率数据（默认每小时更新）
 
-##  系统架构
+## 系统架构
 
 ```
 ┌──────────────────────────────────────────────────────────────┐
@@ -45,6 +46,11 @@
 │   ┌──────────────────────────────────────────────────────┐   │
 │   │                  Controllers                          │   │
 │   │    Auth | Article | ExchangeRate | Like               │   │
+│   └──────────────────────────────────────────────────────┘   │
+│                                                              │
+│   ┌──────────────────────────────────────────────────────┐   │
+│   │                    Jobs                               │   │
+│   │           Exchange Rate Fetcher (1小时间隔)            │   │
 │   └──────────────────────────────────────────────────────┘   │
 └─────────────────────┬──────────────────────┬─────────────────┘
                       │ GORM                 │ go-redis
@@ -72,7 +78,7 @@
    Port 80     Port 8080      Port 3306      Port 6379
 ```
 
-##  技术栈
+## 技术栈
 
 | 层级 | 技术 | 版本 | 用途 |
 |------|------|------|------|
@@ -89,11 +95,9 @@
 | 状态管理 | Pinia | v2.1.7 | 前端状态管理 |
 | 路由 | Vue Router | v4.3.2 | 前端路由管理 |
 | UI 组件 | Element Plus | 2.7.4 | 桌面端组件库 |
-| UI 组件 | Vant | 4.9.0 | 移动端组件库 |
 | HTTP 客户端 | Axios | 1.7.3 | API 请求 |
-| Markdown | marked | 12.0.0 | Markdown 解析渲染 |
 
-##  项目结构
+## 项目结构
 
 ```
 Exchange-Forum/
@@ -108,6 +112,8 @@ Exchange-Forum/
 │   │   ├── article_controller.go # 文章 CRUD + Redis Cache Aside
 │   │   ├── exchange_rate_controllers.go  # 汇率数据管理
 │   │   └── like_controller.go    # 点赞（Redis INCR 原子操作）
+│   ├── jobs/
+│   │   └── exchange_rate_job.go  # 定时汇率获取任务
 │   ├── middlewares/
 │   │   └── auth_middleware.go     # JWT 认证中间件
 │   ├── models/
@@ -116,6 +122,8 @@ Exchange-Forum/
 │   │   └── exchange_rate.go      # 汇率数据模型
 │   ├── router/
 │   │   └── router.go             # 路由注册与 CORS 配置
+│   ├── services/
+│   │   └── exchange_rate_service.go  # 汇率获取服务（Frankfurter API）
 │   ├── utils/
 │   │   ├── utils.go              # JWT 生成/解析、bcrypt 密码工具
 │   │   └── ai.go                 # AI 内容审核（OpenAI API）
@@ -129,13 +137,11 @@ Exchange-Forum/
 ├── Exchangeapp_frontend/         # Vue 3 前端
 │   ├── src/
 │   │   ├── views/                # 页面组件
-│   │   ├── components/           # 公共组件
+│   │   ├── components/           # 公共组件（Login/Register）
 │   │   ├── router/               # Vue Router 配置
 │   │   ├── store/                # Pinia 状态管理
 │   │   ├── types/                # TypeScript 类型定义
 │   │   ├── styles/               # 样式文件
-│   │   │   ├── github-theme.css  # GitHub 风格 Markdown 样式
-│   │   │   └── element-overrides.css  # Element Plus 样式覆盖
 │   │   ├── axios.ts              # Axios 实例与拦截器配置
 │   │   └── main.ts               # 前端入口
 │   ├── Dockerfile                # Docker 构建配置
@@ -149,19 +155,19 @@ Exchange-Forum/
 └── DEPLOY.md                    # Docker 部署指南
 ```
 
-##  前端页面
+## 前端页面
 
 | 页面 | 文件 | 说明 |
 |------|------|------|
 | 首页 | `HomeView.vue` | 平台介绍和功能入口 |
 | 货币兑换 | `CurrencyExchangeView.vue` | 实时汇率计算 |
-| 文章列表 | `NewsView.vue` | 论坛文章列表，需要登录访问 |
-| 文章详情 | `NewsDetailView.vue` | Markdown 渲染、点赞、收藏、评论 |
+| 文章列表 | `NewsView.vue` | 论坛文章列表，需登录访问 |
+| 文章详情 | `NewsDetailView.vue` | Markdown 渲染、点赞、评论（本地存储） |
 | 创建文章 | `CreateArticleView.vue` | Markdown 编辑器，支持 AI 内容审核 |
-| 用户中心 | `UserProfileView.vue` | 个人中心（我的文章、收藏文章、账户设置） |
-| 登录/注册 | `LoginView.vue` / `RegisterView.vue` | 用户认证 |
+| 用户中心 | `UserProfileView.vue` | 个人中心（我的文章、收藏、账户设置） |
+| 登录/注册 | `Login.vue` / `Register.vue` | 用户认证 |
 
-##  快速开始
+## 快速开始
 
 ### 环境要求
 
@@ -205,7 +211,7 @@ docker-compose -f docker-compose.prod.yml up -d --build
 3. **验证服务**
 
 - 后端 API：http://localhost:8080/api/exchangerates
-- 前端页面：http://localhost:80
+- 前端页面：http://localhost
 - 健康检查：http://localhost:8080/health
 
 4. **常用命令**
@@ -281,7 +287,7 @@ npm run dev
 npm run build
 ```
 
-##  环境变量
+## 环境变量
 
 项目支持通过环境变量覆盖配置文件中的默认值：
 
@@ -289,11 +295,12 @@ npm run build
 |--------|------|--------|
 | `DATABASE_DSN` | MySQL 连接字符串 | config.yml 中的值 |
 | `REDIS_ADDR` | Redis 地址（格式：host:port） | localhost:6379 |
+| `REDIS_PASSWORD` | Redis 密码（生产环境建议设置） | 空 |
 | `JWT_SECRET` | JWT 密钥 | config.yml 中的值 |
 | `AI_APIKEY` | OpenAI API Key | 空 |
 | `AI_BASEURL` | OpenAI API 地址 | https://api.openai.com/v1 |
 
-##  API 文档
+## API 文档
 
 所有接口均以 `/api` 为前缀。受保护接口需在请求头中携带 JWT Token：`Authorization: Bearer <token>`
 
@@ -303,12 +310,12 @@ npm run build
 |------|------|------|------|
 | GET | `/health` | 否 | 健康检查接口 |
 
-### 认证接口（无需登录）
+### 认证接口
 
-| 方法 | 路径 | 说明 |
-|------|------|------|
-| POST | `/api/auth/register` | 用户注册，密码 bcrypt 加密存储 |
-| POST | `/api/auth/login` | 用户登录，返回 JWT Token（有效期 72h） |
+| 方法 | 路径 | 认证 | 说明 |
+|------|------|------|------|
+| POST | `/api/auth/register` | 否 | 用户注册，密码 bcrypt 加密存储 |
+| POST | `/api/auth/login` | 否 | 用户登录，返回 JWT Token（有效期 72h） |
 
 **请求示例：**
 ```json
@@ -329,16 +336,17 @@ npm run build
 
 | 方法 | 路径 | 认证 | 说明 |
 |------|------|------|------|
-| GET  | `/api/exchangerates` | 否 | 获取所有汇率列表 |
-| POST | `/api/exchangerates` | 是 | 创建新汇率记录 |
+| GET | `/api/exchangerates` | 否 | 获取所有汇率列表 |
+| GET | `/api/currencies` | 否 | 获取支持的货币列表 |
+| POST | `/api/exchangerates/refresh` | 是 | 手动触发汇率刷新 |
 
 ### 文章接口
 
 | 方法 | 路径 | 认证 | 说明 |
 |------|------|------|------|
-| GET  | `/api/articles` | 否 | 获取文章列表（Redis 缓存 10 分钟） |
-| GET  | `/api/articles/my` | 是 | 获取当前用户的文章 |
-| GET  | `/api/articles/:id` | 否 | 获取指定文章详情 |
+| GET | `/api/articles` | 是 | 获取文章列表（Redis 缓存 10 分钟） |
+| GET | `/api/articles/my` | 是 | 获取当前用户的文章 |
+| GET | `/api/articles/:id` | 是 | 获取指定文章详情 |
 | POST | `/api/articles` | 是 | 发布新文章（需 AI 审核），同时删除列表缓存 |
 
 ### 点赞接口
@@ -346,16 +354,17 @@ npm run build
 | 方法 | 路径 | 认证 | 说明 |
 |------|------|------|------|
 | POST | `/api/articles/:id/like` | 是 | 点赞文章（Redis INCR 原子操作），返回点赞数 |
-| GET  | `/api/articles/:id/like` | 是 | 获取文章点赞数 |
+| GET | `/api/articles/:id/like` | 是 | 获取文章点赞数 |
 
 **响应示例：**
 ```json
 {
-  "likes": 42
+  "message": "Article liked successfully",
+  "likes": "42"
 }
 ```
 
-##  核心设计
+## 核心设计
 
 ### Redis 缓存策略
 
@@ -383,19 +392,27 @@ sqlDB.SetMaxIdleConns(10)   // 最大空闲连接数
 sqlDB.SetMaxOpenConns(100)  // 最大连接数上限
 ```
 
-##  开发注意事项
+### 实时汇率获取
+
+- **数据源**：Frankfurter API（免费，无需 API Key）
+- **支持货币**：EUR、USD、CNY、JPY、GBP、HKD、KRW、AUD、CAD、CHF
+- **更新间隔**：默认 1 小时（可通过配置修改）
+- **手动刷新**：通过 `POST /api/exchangerates/refresh` 端点触发
+
+## 开发注意事项
 
 1. **JWT 密钥**：默认密钥为 `"secret"`，**生产环境必须替换**为高强度随机字符串
 2. **端口**：后端默认运行在 `:8080`，前端开发服务器在 `:5173`，Vite 已配置代理转发 `/api` 请求
 3. **CORS**：开发环境仅允许 `http://localhost:5173` 跨域，Docker 部署时通过 nginx 反向代理无需考虑跨域
 4. **自动建表**：应用启动时 GORM 通过 `AutoMigrate` 自动创建/同步数据库表结构，无需手动建表
-5. **Docker 部署**：生产环境推荐使用 `docker-compose up -d --build` 一键部署
+5. **Docker 部署**：生产环境推荐使用 `docker-compose -f docker-compose.prod.yml up -d --build` 一键部署
+6. **评论与收藏**：评论和收藏功能仅在前端本地存储（localStorage），不涉及后端持久化
+7. **AI 审核**：AI 内容审核功能需要配置 `AI_APIKEY`，为空或为 `"your-api-key"` 时将跳过审核
 
-##  部署文档
+## 部署文档
 
 详细部署说明请参考 [DEPLOY.md](DEPLOY.md)。
 
-##  贡献
+## 贡献
 
 欢迎提交 Issue 和 Pull Request 来改进本项目。
-
